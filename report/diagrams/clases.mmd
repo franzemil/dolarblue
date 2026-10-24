@@ -1,0 +1,43 @@
+%% clases.mmd — Arquitectura: recolectores, procesadores y snapshot
+classDiagram
+    direction LR
+
+    class DataCollector {
+        <<abstract>>
+    }
+    class ApiCollector
+    class FileCollector
+    class DolarBlueCollector
+    class GacetaCollector
+    class Stage {
+        <<abstract>>
+    }
+    class Pipeline
+    class SnapshotReader
+    class JsonProcessor
+    class LLMFileProcessor
+    class MarketHourlyIndexer
+    class GacetaDailyIndexer
+    class TypedResult
+    class ProcessResult
+    class Manifiesto
+
+    DataCollector <|-- ApiCollector
+    DataCollector <|-- FileCollector
+    ApiCollector <|-- DolarBlueCollector
+    FileCollector <|-- GacetaCollector
+    Stage <|-- SnapshotReader
+    Stage <|-- JsonProcessor
+    Stage <|-- LLMFileProcessor
+    Stage <|-- MarketHourlyIndexer
+    Stage <|-- GacetaDailyIndexer
+    Stage <|-- Pipeline
+    Pipeline o-- Stage
+
+    DolarBlueCollector ..> TypedResult : produce
+    GacetaCollector ..> TypedResult : produce
+    DolarBlueCollector ..> Manifiesto : escribe
+    GacetaCollector ..> Manifiesto : escribe
+    SnapshotReader ..> Manifiesto : lee
+    JsonProcessor ..> ProcessResult : produce
+    LLMFileProcessor ..> ProcessResult : produce

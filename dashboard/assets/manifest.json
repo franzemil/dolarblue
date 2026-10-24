@@ -1,0 +1,31 @@
+{
+  "generado": "2026-10-24T11:29:22+00:00",
+  "datos_desde": "2026-04-27 02:00:00",
+  "datos_hasta": "2026-10-24 02:00:00",
+  "horas": 4321,
+  "panel_dias": 179,
+  "h_test": 168,
+  "horizontes": [
+    1,
+    24
+  ],
+  "filas": {
+    "mercado": 4318,
+    "panel": 179,
+    "gaceta": 169,
+    "crudo": 34181,
+    "predicciones": 1344,
+    "roc": 565,
+    "ols_hac": 38
+  },
+  "sha256": {
+    "crudo.parquet": "e38a5e26000c",
+    "gaceta.parquet": "76fb97f9325c",
+    "mercado.parquet": "44af413af824",
+    "ols_hac.parquet": "1dadabb66446",
+    "panel.parquet": "52935997ca71",
+    "predicciones_h1.parquet": "9683c75f1996",
+    "predicciones_h24.parquet": "779736e807dc",
+    "roc_curvas.parquet": "30e3dce614f3"
+  }
+}

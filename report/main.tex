@@ -1,0 +1,72 @@
+% main.tex — Informe Final: Dólar Blue Bolivia (CRISP-DM)
+% Compilar: make render  (o: tectonic -o build main.tex desde report/)
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------- Idioma y tipografía -------------------------
+\usepackage[spanish,es-tabla,es-noshorthands]{babel}
+\usepackage{fontspec}            % motor XeTeX (tectonic): UTF-8 nativo
+\usepackage[htt]{hyphenat}       % permite cortar líneas dentro de \texttt{}
+
+% ------------------------- Matemáticas y tablas -------------------------
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% ------------------------- Gráficos y color -------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{xcolor}
+\definecolor{dbblue}{HTML}{2563EB}   % paleta del proyecto (eda_report.py)
+\definecolor{dborange}{HTML}{F59E0B}
+\definecolor{dbgray}{HTML}{6B7280}
+
+% ------------------------- Números en español -------------------------
+\usepackage{siunitx}            % coma decimal: \num{12,5}
+\sisetup{output-decimal-marker={,}}
+
+% ------------------------- Página y flotantes -------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{float}
+\usepackage[section]{placeins}  % las figuras no cruzan de subsección
+\emergencystretch=1.5em  % evita overfull por tokens \texttt{} largos
+
+% ------------------------- Enlaces -------------------------
+\usepackage[colorlinks=true,linkcolor=dbblue,urlcolor=dbblue,citecolor=dbblue]{hyperref}
+
+% ------------------------- Bibliografía -------------------------
+% natbib + BibTeX clásico: tectonic lo ejecuta internamente (sin biber).
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{plainnat}
+\addto\captionsspanish{\renewcommand{\refname}{Bibliografía}}
+
+% ------------------------- Título -------------------------
+\title{Relación entre el tipo de cambio oficial (BCB), el mercado
+       paralelo (dólar blue) y el mercado P2P (USDT) en Bolivia\\[0.5em]
+       \large Informe final --- Proyecto de Data Science (CRISP-DM)}
+\author{Franz Eulate}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+\input{sections/00_resumen}
+\end{abstract}
+
+\input{sections/01_introduccion}
+\input{sections/02_negocio}
+\input{sections/03_datos}          % incluye 2.4 Exploración (04_analisis)
+\input{sections/05_preparacion}
+\input{sections/06_modelado}
+\input{sections/07_evaluacion_negocio}
+
+% ------------------- WIP: fases 5--6 de CRISP-DM -------------------
+% \input{sections/wip_07_conclusiones}  % Conclusiones (tras evaluación)
+
+\footnotesize
+\bibliography{refs}
+
+\end{document}

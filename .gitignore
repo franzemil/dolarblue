@@ -50,16 +50,29 @@ env/
 jupyter_execute/
 
 # ═══ Datos ═══════════════════════════════════════════════════════════════════
-# DEMO: se versiona el snapshot COMPLETO (PDFs de la Gaceta + respuestas JSON de
-# data/sources + normalizados + data/raw) para que un clon funcione sin volver
-# a descargar nada.
-# Único excluido: los manifiestos de procesamiento (bookkeeping del pipeline).
+# Misma regla que con los parquet: por defecto no se versiona nada de data/ y se
+# abre la excepción solo a lo que el pipeline necesita en tiempo de ejecución.
+#
+# Versionado (~18 MB):
+#   data/raw/*.json        snapshot crudo -> replay offline (main.py process)
+#   data/sources/          respuesta por endpoint -> idem
+#   data/history_full.csv  insumo de prepare_datos.py
+#   data/processed/*.csv   insumos de los notebooks y del informe
+#
+# NO versionado (~140 MB):
+#   data/gaceta/           170 PDFs (solo para re-extraer con LLM)
+#   data/normalized/       derivado de los snapshots
+#   data/chart_6m.csv      derivado
+#   data/processed/*.json  manifiestos del pipeline
+data/*
+!data/raw/
+!data/sources/
+!data/history_full.csv
+!data/processed/
 data/processed/*.json
 
-# Si algún día el repo se publica, comentar la línea anterior y descomentar
-# este bloque para dejar fuera lo pesado (~153 MB):
-#   data/*
-#   !data/processed/
+# Para el demo con los PDFs incluidos, descomentar:
+#   !data/gaceta/
 
 # Intermedios del pipeline que produce prepare_datos.py
 modelado/panel_diario.csv
@@ -78,8 +91,16 @@ modelado/outputs/
 *.parquet
 !dashboard/assets/*.parquet
 
-# ═══ LaTeX / informe ═════════════════════════════════════════════════════════
+# ═══ LaTeX / informe ═══════════════════════════════════════════════════════
+# Se versionan solo las FUENTES: main.tex, sections/, refs.bib, diagrams/*.mmd
+# y dict/. Las figuras y tablas son GENERADAS (make figures + notebook), así que
+# se ignoran; los .gitkeep conservan las carpetas para que los scripts escriban.
 report/build/
+report/figures/*
+!report/figures/.gitkeep
+report/tables/*
+!report/tables/.gitkeep
+
 *.aux
 *.log
 *.out
@@ -92,8 +113,6 @@ report/build/
 *.synctex(busy)
 *.bcf
 *.run.xml
-# OJO: report/figures/*.pdf y report/tables/*.tex SON INSUMOS del informe
-# (main.tex los incluye con \includegraphics e \input) → no se ignoran.
 
 # ═══ Editor / sistema ════════════════════════════════════════════════════════
 .DS_Store

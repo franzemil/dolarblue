@@ -1,0 +1,95 @@
+\section{Comprensión y obtención de datos}
+\label{sec:datos}
+
+\subsection{Recolección de datos}
+
+Los datos provienen de dos fuentes: la API pública de cotizaciones del dólar
+blue \cite{dolarblue2026api} (nivel blue/oficial, series históricas y
+microestructura P2P) y las normas publicadas en la Gaceta Oficial de Bolivia
+\cite{gaceta2026}, en formato PDF. Los recolectores descargan ambas fuentes y
+las persisten en \texttt{data/}; los datos se actualizan cada 24 horas.
+
+Las normas se tipan con un modelo de lenguaje (LLM) que extrae de cada PDF
+sus campos estructurados. El procesamiento posterior es reproducible y no
+descarga nada: reconstruye la serie por hora \texttt{market\_hourly.csv}
+(4\,318 horas) y el registro diario de normas \texttt{gaceta\_daily.csv}
+(181 días, con cero en los días sin publicación). Ambos archivos
+\textbf{conservan su resolución original} y no se remuestrean al recolectar:
+la unión por fecha se hace en el paso de modelado, de modo que la misma capa
+de datos sirve tanto al análisis por hora como al diario.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\textwidth]{diagram_flujo_datos.pdf}
+\caption{Obtención de datos: las dos fuentes convergen en los procesadores,
+que producen los CSVs de análisis.}
+\label{fig:flujo_datos}
+\end{figure}
+
+\subsection{Fuentes de datos}
+
+Las fuentes del proyecto son la API pública de cotizaciones del dólar blue
+\cite{dolarblue2026api} y las normas publicadas en la Gaceta Oficial de
+Bolivia \cite{gaceta2026}.
+
+La API expone tres categorías: cotizaciones al instante (nivel oficial y
+libros P2P), series históricas por hora de 6 meses e historial completo
+exportable.
+
+\subsection{Diccionario de datos}
+
+El modelado se alimenta de tres archivos. La tabla~\ref{tab:diccionario}
+resume las variables que se usan y su unidad.
+
+\begin{table}[!ht]
+\centering\footnotesize
+\begin{tabular}{@{}p{0.19\textwidth}p{0.34\textwidth}p{0.39\textwidth}@{}}
+\toprule
+Archivo & Variable & Contenido (unidad) \\
+\midrule
+\texttt{market\_hourly.csv} & & \emph{frecuencia horaria, 4\,321 filas} \\
+ & \texttt{fecha} & marca horaria en UTC \\
+ & \texttt{blue\_mid}, \texttt{oficial\_mid} & punto medio (compra$+$venta)/2
+   del blue y del oficial (Bs/USD) \\
+ & \texttt{brecha\_pct} & brecha blue--oficial sobre el oficial (\%) \\
+ & \texttt{spread\_blue} & venta menos compra del blue (Bs/USD) \\
+ & \texttt{ret\_blue\_1h} & retorno horario del blue (\%) \\
+ & \texttt{vol\_24h} & desvío estándar móvil de 24~h de los retornos \\
+\midrule
+\texttt{panel\_diario.csv} & & \emph{179 días, cruce mercado $\times$ Gaceta} \\
+ & \texttt{n\_docs\_fx}, \texttt{n\_docs\_fx\_alta} & normas del día con
+   relevancia cambiaria media/alta y alta (conteo) \\
+ & \texttt{n\_docs\_deuda}, \texttt{n\_docs\_comercio}, \texttt{n\_docs\_mineria}
+   & normas del día por canal temático (conteo) \\
+ & \texttt{vol\_media\_24h} & volumen P2P medio del día (USD) \\
+ & \texttt{d\_oficial\_pct} & variación diaria del oficial (\%) \\
+\midrule
+\texttt{gaceta\_llm.csv} & & \emph{169 normas, una fila por documento} \\
+ & \texttt{relevancia\_fx} & nula, baja, media o alta (categoría) \\
+ & \texttt{tags} & canales temáticos asignados por el LLM \\
+ & \texttt{monto\_usd} & monto explícito en dólares, si la norma lo declara \\
+ & \texttt{confidence} & confianza de la extracción, entre 0 y 1 \\
+\midrule
+\emph{Derivadas} & \texttt{brecha\_lag1h}, \texttt{lag3h}, \texttt{lag24h},
+   \texttt{oficial\_lag1h}, \texttt{vol\_lag1h}, \texttt{ret\_blue\_lag1h},
+   \texttt{n\_docs\_*\_lag1} & rezagos usados como predictores (la Gaceta entra
+   rezagada un día) \\
+ & \texttt{hora\_*}, \texttt{dow\_*} & dummies de hora (23) y de día de la
+   semana (6) \\
+\bottomrule
+\end{tabular}
+\caption{Variables usadas por el modelado, por archivo.}
+\label{tab:diccionario}
+\end{table}
+
+\input{sections/04_analisis}
+
+\subsection{Calidad de datos}
+
+Sobre \textbf{34\,182 snapshots} se descartó un único registro con precio nulo;
+la serie horaria requiere interpolar 6 huecos (máximo 3~h). La Gaceta tiene
+\textbf{169 normas} extraídas con LLM (2026-06-18 $\rightarrow$ 10-20) más
+\textbf{509} etiquetadas por palabras clave como respaldo (2025-10-12
+$\rightarrow$ 10-07); aun así, solo \textbf{23 de los 179 días} del panel
+tienen alguna norma con relevancia cambiaria. En el cruce temporal, 117 de los
+249 pares fecha--tag del estudio de eventos tienen datos de mercado.

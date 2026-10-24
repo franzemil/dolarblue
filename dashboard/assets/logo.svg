@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="58" viewBox="0 0 240 58">
+  <rect x="0" y="0" width="240" height="58" rx="8" fill="#F8FAFC"/>
+  <text x="12" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="14" font-weight="800" letter-spacing="0.6" fill="#2563EB">DÓLAR BLUE · BOB/USD</text>
+  <text x="12" y="41" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="10.5" fill="#6B7280">Informe final — CRISP-DM</text>
+</svg>
