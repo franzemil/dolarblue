@@ -1,0 +1,104 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .gitignore — proyecto dolarblue (Python + LaTeX + Jupyter)
+# Regla: se versiona el código, las fuentes del informe y los insumos pequeños;
+# se excluye lo que se regenera, lo que pesa y lo que no debe salir del disco.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ═══ Python ══════════════════════════════════════════════════════════════════
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Empaquetado / distribución
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Cachés de herramientas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ═══ Entornos virtuales ══════════════════════════════════════════════════════
+.venv/
+venv/
+env/
+.direnv/
+# uv.lock SÍ se versiona (reproducibilidad); .python-version también.
+
+# ═══ Secretos y configuración local ══════════════════════════════════════════
+# API keys (KOBO_API_KEY, DBB_API_KEY, DEEPSEEK_API_KEY, LLM_API_KEY)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# ═══ Jupyter ═════════════════════════════════════════════════════════════════
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+.nbconvert/
+jupyter_execute/
+
+# ═══ Datos ═══════════════════════════════════════════════════════════════════
+# DEMO: se versiona el snapshot COMPLETO (PDFs de la Gaceta + respuestas JSON de
+# data/sources + normalizados + data/raw) para que un clon funcione sin volver
+# a descargar nada.
+# Único excluido: los manifiestos de procesamiento (bookkeeping del pipeline).
+data/processed/*.json
+
+# Si algún día el repo se publica, comentar la línea anterior y descomentar
+# este bloque para dejar fuera lo pesado (~153 MB):
+#   data/*
+#   !data/processed/
+
+# Intermedios del pipeline que produce prepare_datos.py
+modelado/panel_diario.csv
+modelado/serie_diaria_blue.csv
+modelado/*.bak
+data/*.bak
+*.bak
+
+# Figuras y CSV intermedios del notebook (se regeneran al ejecutarlo)
+modelado/outputs/
+
+# ═══ Parquet ═══════════════════════════════════════════════════════════════
+# Los .parquet se ignoran en general (son exportaciones regenerables con
+# dashboard/scripts/export_assets.py). La excepción son los 8 que consume
+# Streamlit en tiempo de ejecución: sin ellos la app no arranca.
+*.parquet
+!dashboard/assets/*.parquet
+
+# ═══ LaTeX / informe ═════════════════════════════════════════════════════════
+report/build/
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bcf
+*.run.xml
+# OJO: report/figures/*.pdf y report/tables/*.tex SON INSUMOS del informe
+# (main.tex los incluye con \includegraphics e \input) → no se ignoran.
+
+# ═══ Editor / sistema ════════════════════════════════════════════════════════
+.DS_Store
+._*
+.vscode/
+.idea/
+*.swp
+*~
