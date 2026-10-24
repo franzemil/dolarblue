@@ -1,6 +1,8 @@
 """Comprensión y obtención de datos (incluye EDA)."""
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import streamlit as st
 
@@ -124,8 +126,8 @@ st.markdown(
 ui.seccion("3.5 · Exploración (EDA)")
 ui.figura(
     G.crudo_vs_eda(data.crudo(), hor),
-    "Snapshots crudos (puntos grises) frente a la grilla horaria regular "
-    "(línea), en la última semana de la muestra.",
+    "Snapshots crudos de compra y venta frente a la grilla horaria (medio), "
+    "en la última semana de la muestra.",
     "fig:crudo_vs_eda",
 )
 ui.figura(
@@ -152,5 +154,82 @@ ui.lectura(
     "oficial divide la muestra en dos regímenes; todas las comparaciones se "
     "hacen dentro del régimen vigente.",
 )
+
+ui.seccion("3.6 · Trazabilidad del pipeline")
+PIPE_DIR = C.ASSETS / "pipeline"
+meta_path = PIPE_DIR / "scenes.json"
+
+if not meta_path.exists():
+    ui.vacio(
+        "Faltan los frames y el guion de la animación en "
+        "`dashboard/assets/pipeline/`.",
+        "make pipeline-assets",
+    )
+else:
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    s = meta["stats"]
+    hueco = s["gaps"][0][2] if s.get("gaps") else 0
+    st.markdown(
+        "La animación de 60 segundos recorre las ocho escenas del pipeline. "
+        "Cada pestaña muestra el clip animado de una escena (o su frame final "
+        "si los clips no están generados) con la misma explicación que la "
+        "sección **2.2** del notebook. Los frames se exportan desde "
+        "`report/make_animation.py`; no se recalculan al abrir la app."
+    )
+    st.caption(
+        f"Frames generados desde `data/` al {s['updated']} · sin llamadas a la API."
+    )
+    ui.kpis([
+        {"label": "Snapshots crudos", "value": F.miles(s["snapshots"]),
+         "nota": "history_full.csv"},
+        {"label": "Horas observadas", "value": F.miles(s["hours"]),
+         "nota": f"{F.miles(s['hours_expected'])} esperadas · {hueco} h interpoladas"},
+        {"label": "PDFs / extracciones",
+         "value": f"{s['pdfs']} / {s['extracted']}",
+         "nota": "una edición sin detalle"},
+        {"label": "Cache LLM",
+         "value": f"{s['cache_entries']} / {s['extracted']}",
+         "nota": f"{s['provider']} / {s['model']}"},
+    ])
+
+    video = C.REPORT / "anim" / "pipeline.mp4"
+    if video.exists():
+        with st.expander("Ver la animación completa (60 s)"):
+            st.video(str(video))
+            st.caption(
+                "MP4 1920×1080 · 30 fps · también disponible en "
+                "`report/anim/pipeline.gif`."
+            )
+    else:
+        st.caption(
+            "El MP4 no está disponible en este entorno; los ocho frames sí. "
+            "Generalo con `make anim`."
+        )
+
+    clip_dir = C.REPORT / "anim" / "scenes"
+    tabs = st.tabs([f"{x['n']}. {x['short']}" for x in meta["scenes"]])
+    for tab, spec in zip(tabs, meta["scenes"]):
+        with tab:
+            st.markdown(f"#### {spec['title']}")
+            st.markdown(spec["lead"])
+            clip = clip_dir / spec.get("clip", "")
+            if spec.get("clip") and clip.exists():
+                st.image(str(clip), width="stretch")
+                st.caption(
+                    f"Escena {spec['n']}/8 · {spec['start']:.0f}–{spec['end']:.0f} s "
+                    f"· animación en loop ({spec['duration']:.0f} s) · "
+                    f"{spec['subtitle']}"
+                )
+            else:
+                st.image(str(PIPE_DIR / spec["image"]), width="stretch")
+                st.caption(
+                    f"Escena {spec['n']}/8 · {spec['start']:.0f}–{spec['end']:.0f} s "
+                    f"· frame final · generá `make anim` para ver la animación"
+                )
+            st.markdown("**Qué mirar**")
+            for bullet in spec["bullets"]:
+                st.markdown(f"- {bullet}")
+            ui.lectura(spec["rule"], titulo="Regla del pipeline")
+            ui.fuente(spec["source"])
 
 ui.pie("views/03_datos.py")

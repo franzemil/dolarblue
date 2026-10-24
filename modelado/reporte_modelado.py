@@ -226,7 +226,7 @@ res["spearman"] = {
     for t in tag_dia.columns
 }
 
-# ========================= matriz de costos (dirección a 1 paso) ===========
+# ===================== matriz de dirección (dirección a 1 paso) ============
 # Provenance: la matriz 2x2 sale del notebook de análisis (confusión de
 # dirección, ARIMA a un paso sobre blue_mid, modo cambio_esperado).
 # Fuente primaria: el notebook de resultados (independiente). Si no existe,
@@ -234,13 +234,13 @@ res["spearman"] = {
 _dir_candidatos = [OUT / "outputs" / "informe_direccion.csv",
                    OUT / "outputs" / "nb_confusion_direccion.csv"]
 _dir_csv = next((c for c in _dir_candidatos if c.exists()), None)
-res["matriz_costos"] = None
+res["matriz_direccion"] = None
 if _dir_csv is not None:
     _d = pd.read_csv(_dir_csv)
     if "horizonte" not in _d:                 # compatibilidad con CSV antiguos
         _d["horizonte"] = 1
     base = _d[(_d["target"] == "blue_mid") & (_d["modo"] == "cambio_esperado")]
-    res["matriz_costos"] = {}
+    res["matriz_direccion"] = {}
     for h, g in base.groupby("horizonte"):
         fila = g[g["modelo"].str.startswith("ARIMA")]
         if not len(fila):
@@ -248,7 +248,7 @@ if _dir_csv is not None:
         f = fila.iloc[0]
         tp, fn, fp, tn = (int(f["tp"]), int(f["fn"]),
                           int(f["fp"]), int(f["tn"]))
-        res["matriz_costos"][str(int(h))] = {
+        res["matriz_direccion"][str(int(h))] = {
             "modelo": str(f["modelo"]),
             "tp": tp, "fn": fn, "fp": fp, "tn": tn,
             "n": int(f["n"]), "accuracy": float(f["accuracy"]),
@@ -283,13 +283,13 @@ for h in res["horizontes"]:
 print(f"=== OLS+HAC (n={res['ols_hac']['n']}, R2={res['ols_hac']['r2']}) ===")
 for c in res["ols_hac"]["coeficientes"]:
     print(f"  {c['var']:18s} β={c['coef']:+.4f}  p={c['p']:.4f}")
-print("=== matriz de costos (dirección, ARIMA 1 paso, blue) ===")
-mc = res.get("matriz_costos")
+print("=== matriz de dirección (ARIMA 1 paso, blue) ===")
+mc = res.get("matriz_direccion")
 if mc:
     for h, v in mc.items():
         print(f"  h={h:>2} {v['modelo']:16s} TP {v['tp']:3d} | FN {v['fn']:3d} | "
               f"FP {v['fp']:3d} | TN {v['tn']:3d} | n={v['n']} | "
-              f"accuracy {v['accuracy']:.3f} | umbral C_FN/C_FP < {v['umbral']}")
+              f"accuracy {v['accuracy']:.3f} | umbral TN/FN {v['umbral']}")
 else:
     print("  (sin CSV de dirección: correr el notebook primero)")
 print("OK -> metricas_reporte.json")

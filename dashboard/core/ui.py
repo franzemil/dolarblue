@@ -54,13 +54,43 @@ header[data-testid="stHeader"] { background: transparent; }
 .db-h2-sub { font-size: .84rem; color: var(--db-gray); margin-bottom: .6rem; }
 
 /* KPI */
-.db-kpi { border: 1px solid var(--db-border); border-radius: 12px;
-  background: #fff; padding: .8rem .9rem .75rem; height: 100%;
-  box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+.db-kpi { position: relative; border: 1px solid var(--db-border);
+  border-radius: 12px; background: #fff; padding: .8rem .9rem .75rem;
+  height: 100%; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+.db-kpi:hover { z-index: 100; }
 .db-kpi-label { font-size: .68rem; text-transform: uppercase;
   letter-spacing: .08em; color: var(--db-gray); font-weight: 700; }
 .db-kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--db-dark);
   line-height: 1.25; margin-top: .18rem; }
+.db-help { position: relative; display: inline-block; margin-left: .25rem;
+  color: var(--db-gray); font-size: .72rem; font-weight: 600;
+  cursor: help; outline: none; }
+.db-help::after {
+  content: attr(data-tip);
+  position: absolute; left: 50%; bottom: 1.45rem;
+  transform: translateX(-50%);
+  width: max-content; max-width: 18rem;
+  padding: .5rem .65rem;
+  border-radius: 7px;
+  background: var(--db-dark); color: #fff;
+  font-size: .72rem; font-weight: 400; line-height: 1.4;
+  letter-spacing: normal; text-transform: none; text-align: left;
+  white-space: normal; z-index: 1000;
+  box-shadow: 0 6px 18px rgba(15,23,42,.22);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .12s ease;
+}
+.db-help::before {
+  content: ""; position: absolute; left: 50%; bottom: 1.1rem;
+  transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: var(--db-dark);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .12s ease;
+}
+.db-kpi:hover .db-help::after,
+.db-kpi:hover .db-help::before,
+.db-help:focus::after,
+.db-help:focus::before { opacity: 1; visibility: visible; }
 .db-kpi-nota { font-size: .73rem; color: var(--db-gray); margin-top: .15rem; }
 .db-delta { font-size: .74rem; font-weight: 700; margin-top: .15rem; }
 .db-good { color: var(--db-green); } .db-bad { color: var(--db-red); }
@@ -138,17 +168,27 @@ def badge(texto: str, tono: str = "") -> None:
 
 # ── tarjetas ───────────────────────────────────────────────────────────────
 def kpis(items: list[dict]) -> None:
-    """items: {label, value, nota?, delta?, tono? ('good'|'bad'|'neutral')}"""
+    """items: {label, value, nota?, delta?, tono?, ayuda?}.
+
+    ``ayuda`` se muestra como tooltip al pasar el mouse por la tarjeta.
+    """
     cols = st.columns(len(items), gap="small")
     for col, it in zip(cols, items):
         tono = it.get("tono", "neutral")
         delta = it.get("delta")
         delta_html = (f'<div class="db-delta db-{tono}">{delta}</div>'
                       if delta else "")
+        ayuda = it.get("ayuda")
+        icono = ""
+        if ayuda:
+            tip = html.escape(ayuda, quote=True)
+            icono = (f'<span class="db-help" data-tip="{tip}" '
+                     f'aria-label="{tip}" tabindex="0">ⓘ</span>')
         with col:
             st.markdown(
-                '<div class="db-kpi">'
-                f'<div class="db-kpi-label">{html.escape(it["label"])}</div>'
+                f'<div class="db-kpi">'
+                f'<div class="db-kpi-label">{html.escape(it["label"])}'
+                f'{icono}</div>'
                 f'<div class="db-kpi-value">{html.escape(str(it["value"]))}</div>'
                 f'{delta_html}'
                 f'<div class="db-kpi-nota">{html.escape(it.get("nota", ""))}</div>'

@@ -12,8 +12,10 @@ las persisten en \texttt{data/}; los datos se actualizan cada 24 horas.
 Las normas se tipan con un modelo de lenguaje (LLM) que extrae de cada PDF
 sus campos estructurados. El procesamiento posterior es reproducible y no
 descarga nada: reconstruye la serie por hora \texttt{market\_hourly.csv}
-(4\,318 horas) y el registro diario de normas \texttt{gaceta\_daily.csv}
-(181 días, con cero en los días sin publicación). Ambos archivos
+(4\,318 horas observadas; 4\,321 en la grilla al interpolar el único hueco de
+3~h) y el registro diario de normas \texttt{gaceta\_daily.csv} (181 días, con
+cero en los días sin publicación; el panel de modelado conserva 179 porque
+descarta los dos primeros días sin retorno previo). Ambos archivos
 \textbf{conservan su resolución original} y no se remuestrean al recolectar:
 la unión por fecha se hace en el paso de modelado, de modo que la misma capa
 de datos sirve tanto al análisis por hora como al diario.
@@ -24,6 +26,41 @@ de datos sirve tanto al análisis por hora como al diario.
 \caption{Obtención de datos: las dos fuentes convergen en los procesadores,
 que producen los CSVs de análisis.}
 \label{fig:flujo_datos}
+\end{figure}
+
+\subsection{Trazabilidad del pipeline}
+
+La figura~\ref{fig:pipeline_anim} es el fotograma final de una animación de
+60 segundos que recorre la extracción, los indexers y la exploración de las
+dos fuentes. El video está en \texttt{report/anim/pipeline.mp4} (y la versión
+GIF en \texttt{report/anim/pipeline.gif}); se regenera con
+\texttt{make anim}.
+Las escenas 5 y 6 detallan los dos indexers: el horario deriva precios medios,
+spread, brecha, retorno y volatilidad; el diario construye un calendario
+completo y rellena con cero los días sin publicación. La escena 7 muestra la
+interpolación de huecos de hasta 3~h y las reglas para el resto. El notebook
+(sección~2.2) y el dashboard (sección~3.6) reproducen las ocho escenas como
+clips animados, con el frame final como respaldo.
+
+La animación muestra el comportamiento efectivo del código. La corrida se
+protege con un manifiesto de 24 h; cada PDF se reutiliza si ya está en disco
+(más de 1~KB, validado por tamaño) y la extracción LLM se cachea por
+\texttt{sha256(pdf):provider:model}; la firma \texttt{\%PDF} se exige en las
+descargas nuevas. Un fallo de descarga o de esquema se
+reintenta hasta tres veces con retroceso; si persiste, no se cachea y queda
+para la corrida siguiente. La etiqueta \texttt{relevancia\_fx} es una salida:
+una norma \texttt{nula} se conserva con peso cero y no se reintenta. En la
+serie horaria, un único hueco de 3~h se interpola ($\le 3$~h); los huecos
+mayores y el calentamiento de \texttt{vol\_24h} quedan como \texttt{NaN}, y
+los días sin norma en la Gaceta son ceros estructurales, no datos faltantes.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\textwidth]{fig_pipeline_poster.pdf}
+\caption{Fotograma final de la animación del pipeline: descarga única, cache
+de extracción, reintento acotado y faltantes explícitos. El video completo
+está en \texttt{report/anim/pipeline.mp4}.}
+\label{fig:pipeline_anim}
 \end{figure}
 
 \subsection{Fuentes de datos}
@@ -47,7 +84,7 @@ resume las variables que se usan y su unidad.
 \toprule
 Archivo & Variable & Contenido (unidad) \\
 \midrule
-\texttt{market\_hourly.csv} & & \emph{frecuencia horaria, 4\,321 filas} \\
+\texttt{market\_hourly.csv} & & \emph{frecuencia horaria, 4\,318 filas} \\
  & \texttt{fecha} & marca horaria en UTC \\
  & \texttt{blue\_mid}, \texttt{oficial\_mid} & punto medio (compra$+$venta)/2
    del blue y del oficial (Bs/USD) \\
@@ -87,7 +124,7 @@ Archivo & Variable & Contenido (unidad) \\
 \subsection{Calidad de datos}
 
 Sobre \textbf{34\,182 snapshots} se descartó un único registro con precio nulo;
-la serie horaria requiere interpolar 6 huecos (máximo 3~h). La Gaceta tiene
+la serie horaria requiere interpolar un único hueco de 3~h. La Gaceta tiene
 \textbf{169 normas} extraídas con LLM (2026-06-18 $\rightarrow$ 10-20) más
 \textbf{509} etiquetadas por palabras clave como respaldo (2025-10-12
 $\rightarrow$ 10-07); aun así, solo \textbf{23 de los 179 días} del panel

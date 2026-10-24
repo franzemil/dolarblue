@@ -42,8 +42,8 @@ _tabla([
     ("¿Hay errores extremos?", "RMSE", "Penaliza más los errores grandes que el MAE.", "tab:comparativa"),
     ("¿Supera al paseo aleatorio?", "RMSE ÷ naïve", "Menor que 1 es mejor; 1 es empate.", "tab:comparativa"),
     ("¿Se traduce en dinero?", "ΔMAE × volumen", "Ahorro por precisión; si ΔMAE = 0, el ahorro es cero.", "tab:kpi_volumen"),
-    ("¿Acierta la dirección?", "Accuracy, TP/FN/FP/TN", "Útil solo si las clases están balanceadas y el costo es simétrico.", "tab:matriz_costos"),
-    ("¿Conviene comprar o esperar?", "C_FN / C_FP", "Umbral de indiferencia entre evitar una baja y perderse una suba.", "tab:matriz_costos"),
+    ("¿Acierta la dirección?", "Accuracy, TP/FN/FP/TN", "Útil solo si las clases están balanceadas.", "tab:matriz_direccion"),
+    ("¿Conviene comprar o esperar?", "TN / FN", "Umbral de decisión entre evitar una baja y perderse una suba.", "tab:matriz_direccion"),
     ("¿Qué variable importa?", "β, p-valor, IC 95 %", "Efecto estimado y su incertidumbre con errores HAC.", "tab:ols_hac"),
     ("¿Qué tan bien ajusta el OLS?", "R²", "Proporción de varianza explicada dentro de la muestra.", "tab:ols_hac"),
     ("¿Qué orden ARIMA elegir?", "AIC, BIC, AICc, HQIC", "Comparan verosimilitud y penalizan parámetros.", "tab:arima_grid"),
@@ -149,34 +149,36 @@ with tabs[1]:
         "dirección realizada con la predicha."
     )
     _tabla([
-        ("TP", "real sube y predice sube", "Acierto de una suba.", "alto", "tab:matriz_costos"),
-        ("FN", "real sube y predice baja", "Suba perdida: no se compró.", "bajo", "tab:matriz_costos"),
-        ("FP", "real baja y predice sube", "Compra equivocada: el precio bajó.", "bajo", "tab:matriz_costos"),
-        ("TN", "real baja y predice baja", "Acierto de una baja.", "alto", "tab:matriz_costos"),
-        ("Accuracy", "(TP + TN) / n", "Proporción de aciertos.", "1", "tab:matriz_costos"),
+        ("TP", "real sube y predice sube", "Acierto de una suba.", "alto", "tab:matriz_direccion"),
+        ("FN", "real sube y predice baja", "Suba perdida: no se compró.", "bajo", "tab:matriz_direccion"),
+        ("FP", "real baja y predice sube", "Compra equivocada: el precio bajó.", "bajo", "tab:matriz_direccion"),
+        ("TN", "real baja y predice baja", "Acierto de una baja.", "alto", "tab:matriz_direccion"),
+        ("Accuracy", "(TP + TN) / n", "Proporción de aciertos.", "1", "tab:matriz_direccion"),
         ("Recall", "TP / (TP + FN)", "Cuántas subas se detectan.", "1", "fig:roc"),
         ("FPR", "FP / (FP + TN)", "Cuántas bajadas se confunden con subas.", "0", "fig:roc"),
         ("AUC", "Área bajo la curva ROC", "Capacidad de ordenar subas antes que bajas.", "1", "fig:roc"),
-        ("Umbral C_FN / C_FP", "TN / FN", "Costo relativo máximo para que la señal convenga.", "> 1", "tab:matriz_costos"),
-        ("Ahorro simétrico", "(FP + TN) − (FP + FN)", "Unidades ahorradas frente a no operar.", "> 0", "tab:matriz_costos"),
+        ("Umbral TN / FN", "TN / FN", "Bajadas evitadas por cada suba perdida.", "> 1", "tab:matriz_direccion"),
+        ("Bajadas evitadas", "TN / (FP + TN)", "Proporción de bajadas anticipadas correctamente.", "1", "tab:matriz_direccion"),
     ], ("Métrica", "Definición", "Qué mide", "Mejor valor", "Dónde aparece"))
 
     st.markdown("**Ejemplo real: nivel del blue, ARIMA con origen móvil**")
-    mc1 = R["matriz_costos"]["1"]
-    mc24 = R["matriz_costos"]["24"]
+    # compatibilidad con una caché de Streamlit anterior al renombre
+    md = R.get("matriz_direccion") or R.get("matriz_costos") or {}
+    mc1 = md["1"]
+    mc24 = md["24"]
     ui.tabla(
         pd.DataFrame([
             {"Horizonte": "1 h", "TP": mc1["tp"], "FN": mc1["fn"],
              "FP": mc1["fp"], "TN": mc1["tn"], "n": mc1["n"],
-             "Accuracy": mc1["accuracy"], "C_FN / C_FP": mc1["umbral"]},
+             "Accuracy": mc1["accuracy"], "TN / FN": mc1["umbral"]},
             {"Horizonte": "24 h", "TP": mc24["tp"], "FN": mc24["fn"],
              "FP": mc24["fp"], "TN": mc24["tn"], "n": mc24["n"],
-             "Accuracy": mc24["accuracy"], "C_FN / C_FP": mc24["umbral"]},
+             "Accuracy": mc24["accuracy"], "TN / FN": mc24["umbral"]},
         ]),
         "A una hora la señal supera el azar; a un día la accuracy cae por "
         "debajo de 0,5 y el umbral se vuelve más exigente.",
-        "tab:matriz_costos",
-        formato={"Accuracy": 3, "C_FN / C_FP": 2},
+        "tab:matriz_direccion",
+        formato={"Accuracy": 3, "TN / FN": 2},
     )
     st.markdown("**Matriz de confusión a 1 hora**")
     matriz = pd.DataFrame(
@@ -189,7 +191,7 @@ with tabs[1]:
     st.caption(
         f"Accuracy = (TP + TN) / n = ({mc1['tp']} + {mc1['tn']}) / "
         f"{mc1['n']} = {F.num(mc1['accuracy'], 3)}. "
-        f"Umbral = TN / FN = {mc1['tn']} / {mc1['fn']} = "
+        f"Umbral TN/FN = {mc1['tn']} / {mc1['fn']} = "
         f"{F.num(mc1['umbral'], 2)}."
     )
 
@@ -225,7 +227,7 @@ with tabs[1]:
     ui.alerta(
         "La accuracy sola engaña: si el 70 % de las horas sube, predecir "
         "siempre \"sube\" acierta 0,70 sin información. Por eso el informe "
-        "reporta TP, FN, FP y TN, y traduce los errores a un umbral de costos.",
+        "reporta TP, FN, FP y TN, y resume la señal en un umbral TN/FN.",
         titulo="Trampa frecuente",
     )
 
@@ -419,7 +421,7 @@ mapa = pd.DataFrame([
     {"Elemento": "tab:ols_hac", "Métricas": "β, EE HAC, p, IC 95 %, R²"},
     {"Elemento": "tab:arima_grid", "Métricas": "AIC de 16 candidatos"},
     {"Elemento": "tab:criterios_info", "Métricas": "logL, AIC, BIC, AICc, HQIC"},
-    {"Elemento": "tab:matriz_costos", "Métricas": "TP, FN, FP, TN, accuracy, umbral"},
+    {"Elemento": "tab:matriz_direccion", "Métricas": "TP, FN, FP, TN, accuracy, TN/FN"},
     {"Elemento": "fig:roc", "Métricas": "TPR, FPR, AUC"},
     {"Elemento": "tab:eventos", "Métricas": "exceso medio, IC95 %, n"},
     {"Elemento": "tab:spearman", "Métricas": "ρ mismo día y día siguiente"},
@@ -439,13 +441,13 @@ _tabla([
     ("k", "número de parámetros del modelo"),
     ("L", "verosimilitud maximizada"),
     ("ρ", "correlación de rangos de Spearman"),
-    ("C_FP / C_FN", "costo de un falso positivo / falso negativo"),
+    ("TN / FN", "bajadas evitadas por cada suba perdida"),
     ("pp", "puntos porcentuales"),
 ], ("Símbolo", "Significado"))
 
 ui.lectura(
     "La regla de oro: el RMSE y el R² describen el ajuste; el MAE y el ΔMAE "
-    "deciden si hay ahorro; la accuracy y el umbral de costos deciden si la "
+    "deciden si hay ahorro; la accuracy y el umbral TN/FN deciden si la "
     "señal sirve para operar. Ninguna métrica reemplaza a las otras.",
 )
 

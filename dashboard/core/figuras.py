@@ -67,33 +67,42 @@ def serie_brecha(grilla: pd.DataFrame, height: int = 300) -> go.Figure:
 
 
 def crudo_vs_eda(crudo: pd.DataFrame, grilla: pd.DataFrame,
-                 height: int = 360) -> go.Figure:
-    """Snapshots crudos vs serie horaria, en la última semana."""
+                 height: int = 380) -> go.Figure:
+    """Dos snapshots crudos (compra/venta) vs la serie EDA (medio)."""
     fin = grilla.index.max() + pd.Timedelta(hours=1)
     inicio = fin - pd.Timedelta(hours=168)
-    sub = grilla.loc[inicio:fin]
+    sub = grilla.loc[inicio:fin - pd.Timedelta(hours=1)]
     raw = crudo[(crudo.fecha >= inicio) & (crudo.fecha < fin)]
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
                         vertical_spacing=0.12,
                         subplot_titles=("Nivel del blue (Bs/USD)",
                                         "Brecha cambiaria (%)"))
-    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.blue_sell, mode="markers",
-                             name="Snapshot crudo",
+    # Panel de nivel: compra y venta crudas + medio EDA
+    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.blue_buy, mode="markers",
+                             name="Crudo compra",
                              marker=dict(color="#94A3B8", size=3, opacity=.7)),
                   row=1, col=1)
-    fig.add_trace(go.Scatter(x=sub.index, y=sub.blue_mid, name="Grilla horaria",
+    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.blue_sell, mode="markers",
+                             name="Crudo venta",
+                             marker=dict(color="#475569", size=3, opacity=.7)),
+                  row=1, col=1)
+    fig.add_trace(go.Scatter(x=sub.index, y=sub.blue_mid, name="EDA (medio)",
                              line=dict(color=C.BLUE, width=1.6)), row=1, col=1)
-    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.brecha_snapshot, mode="markers",
-                             name="Snapshot crudo", showlegend=False,
-                             marker=dict(color="#94A3B8", size=3, opacity=.7)),
-                  row=2, col=1)
-    fig.add_trace(go.Scatter(x=sub.index, y=sub.brecha_pct, name="Grilla horaria",
+    # Panel de brecha: compra y venta crudas + brecha EDA
+    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.brecha_buy, mode="markers",
+                             name="Brecha compra",
+                             marker=dict(color="#94A3B8", size=3, opacity=.7),
+                             showlegend=False), row=2, col=1)
+    fig.add_trace(go.Scatter(x=raw.fecha, y=raw.brecha_sell, mode="markers",
+                             name="Brecha venta",
+                             marker=dict(color="#475569", size=3, opacity=.7),
+                             showlegend=False), row=2, col=1)
+    fig.add_trace(go.Scatter(x=sub.index, y=sub.brecha_pct, name="Brecha EDA",
                              showlegend=False,
                              line=dict(color=C.RED, width=1.6)), row=2, col=1)
     _layout(fig, height, hover="x unified")
     fig.update_layout(legend=dict(orientation="h", y=1.08, x=0))
     return fig
-
 
 # ── predicciones ───────────────────────────────────────────────────────────
 def pred_vs_real(preds: pd.DataFrame, target: str, modelo: str,

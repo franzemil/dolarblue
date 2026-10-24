@@ -26,7 +26,7 @@ st.markdown(
    del naïve a 1 h y a 24 h. La única ganancia medible es de RMSE (4,5 % a una
    hora), sin contrapartida contable.
 3. **La señal direccional es de una hora.** A 1 h la accuracy es 0,571 y el
-   umbral C_FN/C_FP es 1,21; a 24 h cae a 0,485 y el umbral a 0,43. No hay
+   umbral TN/FN es 1,21; a 24 h cae a 0,485 y el umbral a 0,43. No hay
    señal diaria.
 4. **La Gaceta no muestra relación explotable.** Ningún canal resulta
    significativo en el OLS-HAC ni en el estudio de eventos; las correlaciones
@@ -50,8 +50,9 @@ st.markdown(
   para concluir sobre estabilidad; repetir con ventanas móviles de varios meses.
 - **Intervalos, no puntos.** Profundizar la calibración de la banda del ARIMA:
   es el único componente con valor operativo.
-- **Costos asimétricos reales.** Estimar C_FP y C_FN con datos de tesorería de
-  una empresa para convertir el umbral en una regla de decisión.
+- **Costos asimétricos reales.** Estimar con datos de tesorería de una empresa
+  el costo de una suba perdida y de una baja evitada para convertir el umbral
+  TN/FN en una regla operativa.
 - **Ingesta programada.** Respetar la cuota semanal de la API (~30 llamadas por
   corrida) con ingestas programadas, no exploratorias.
 - **Señales alternativas.** El volumen P2P y los spreads por plataforma no

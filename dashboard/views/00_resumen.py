@@ -51,7 +51,7 @@ with c2:
 with c3:
     st.markdown("**3 · La dirección solo sirve a 1 hora**")
     st.caption(
-        "Accuracy 0,571 a una hora, con umbral C_FN/C_FP < 1,21. A un día cae "
+        "Accuracy 0,571 a una hora, con umbral TN/FN 1,21. A un día cae "
         "a 0,485: por debajo del azar."
     )
 

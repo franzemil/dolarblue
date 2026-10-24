@@ -22,24 +22,42 @@ COLORES_HORIZONTES = {"5 h": "#1d4ed8", "1 d": "#0891b2", "3 d": "#f59e0b", "5 d
 
 
 def raw_vs_eda(crudo_semana, eda_hora_semana, *, etiqueta, etiqueta_eje):
-    """Crudo (snapshots) -> EDA horario (grilla regular), ambos cada hora."""
+    """Dos snapshots crudos (compra/venta) -> EDA horario (medio).
+
+    El panel izquierdo compara ``blue_buy`` y ``blue_sell`` con el punto medio
+    horario ``blue_mid``. El derecho hace lo mismo con las brechas calculadas
+    contra el oficial de compra/venta y la brecha EDA de medios.
+    """
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.6))
-    PANELES = [(axes[0], "blue_sell", "blue_mid"),
-               (axes[1], "brecha_snapshot", "brecha_pct")]
-    for ax, col_crudo, col_eda_h in PANELES:
-        ax.plot(crudo_semana.fecha, crudo_semana[col_crudo],
-                color="#94a3b8", lw=0.5, alpha=0.8, label="crudo (snapshots)")
-        ax.plot(eda_hora_semana.index, eda_hora_semana[col_eda_h],
+    if "blue_buy" in crudo_semana:
+        nivel = [("blue_buy", "Blue compra (crudo)", "#94a3b8"),
+                 ("blue_sell", "Blue venta (crudo)", "#475569")]
+        brecha = [("brecha_buy", "Brecha compra (cruda)", "#94a3b8"),
+                  ("brecha_sell", "Brecha venta (cruda)", "#475569")]
+    else:  # compatibilidad con el notebook de análisis anterior
+        nivel = [("blue_sell", "Blue venta (crudo)", "#94a3b8")]
+        brecha = [("brecha_snapshot", "Brecha (cruda)", "#94a3b8")]
+    PANELES = [
+        (axes[0], "blue_mid", nivel, "Blue medio (EDA)",
+         etiqueta("blue_sell")),
+        (axes[1], "brecha_pct", brecha, "Brecha EDA (medio)",
+         etiqueta("brecha_pct")),
+    ]
+    for ax, col_eda, crudos, etiqueta_eda, titulo in PANELES:
+        for col, label, color in crudos:
+            ax.plot(crudo_semana.fecha, crudo_semana[col],
+                    color=color, lw=0.5, alpha=0.8, label=label)
+        ax.plot(eda_hora_semana.index, eda_hora_semana[col_eda],
                 color="#0891b2", lw=1.4, marker="o", ms=2.5,
-                label="EDA horario (grilla regular)")
-        ax.set_title(etiqueta("blue_sell") if col_crudo == "blue_sell"
-                     else etiqueta("brecha_pct"))
-        ax.set_ylabel(etiqueta_eje("blue_mid" if col_crudo == "blue_sell"
+                label=etiqueta_eda)
+        ax.set_title(titulo)
+        ax.set_ylabel(etiqueta_eje("blue_mid" if col_eda == "blue_mid"
                                    else "brecha_pct"))
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=7, loc="best")
         ax.tick_params(axis="x", rotation=30)
         ax.grid(alpha=0.25, lw=0.6)
-    fig.suptitle("La ventana de prueba: crudo → EDA horario", fontsize=12)
+    fig.suptitle("La ventana de prueba: dos snapshots crudos → EDA horario (medio)",
+                 fontsize=12)
     fig.tight_layout()
     return fig
 
@@ -83,6 +101,52 @@ def rl_test(te_h, pred_rl_h, naive_h, *, etiqueta, etiqueta_eje,
         axe.legend(fontsize=6.5, loc="lower left", ncol=2)
         axe.grid(alpha=0.25, lw=0.6)
     fig.suptitle(f"Regresión lineal (sklearn) — pronóstico a {horizonte} h",
+                 fontsize=10.5)
+    fig.tight_layout()
+    return fig
+
+
+def rl_horizontes(datos, *, etiqueta, etiqueta_eje, horizontes=(1, 24)):
+    """Regresión lineal en ambos horizontes, con nivel y error por target.
+
+    ``datos`` es ``{h: {target: (real, pred, naive)}}``. Cada columna es un
+    horizonte; las filas alternan nivel y error para brecha y nivel del blue.
+    """
+    objetivos = ["brecha_pct", "blue_mid"]
+    fig, axes = plt.subplots(
+        4, len(horizontes), figsize=(11.5, 9.0),
+        gridspec_kw={"height_ratios": [3, 1, 3, 1]},
+        sharex="col", squeeze=False,
+    )
+    for j, h in enumerate(horizontes):
+        for k, target in enumerate(objetivos):
+            real, pred, naive = datos[h][target]
+            ax, axe = axes[2 * k, j], axes[2 * k + 1, j]
+
+            ax.plot(real.index, real, color="tab:green", lw=1,
+                    label="observado (prueba)")
+            ax.plot(pred.index, pred, color="tab:orange", ls="--", lw=1.4,
+                    label=f"Regresión lineal (RMSE {rmse(real, pred):.3f})")
+            ax.plot(naive.index, naive, color="tab:gray", ls=":", lw=1.1,
+                    label=f"naïve (RMSE {rmse(real, naive):.3f})")
+            ax.set_title(f"{etiqueta(target)} · horizonte {h} h", fontsize=9)
+            ax.set_ylabel(etiqueta_eje(target), fontsize=7.5)
+            ax.legend(fontsize=6.4, loc="upper left")
+            ax.tick_params(labelsize=7)
+            ax.grid(alpha=0.25, lw=0.55)
+
+            e_rl, e_nv = pred - real, naive - real
+            axe.axhline(0, color="black", lw=0.8)
+            axe.plot(e_rl.index, e_rl, color="tab:orange", ls="--", lw=1.1,
+                     label=f"error RL (sesgo {e_rl.mean():+.3f})")
+            axe.plot(e_nv.index, e_nv, color="tab:gray", ls=":", lw=1.1,
+                     label=f"error naïve (sesgo {e_nv.mean():+.3f})")
+            axe.set_ylabel("error", fontsize=7.5)
+            axe.tick_params(labelsize=7)
+            axe.legend(fontsize=6.2, loc="lower left", ncol=2)
+            axe.grid(alpha=0.25, lw=0.55)
+
+    fig.suptitle("Regresión lineal: pronóstico a una hora y a un día",
                  fontsize=10.5)
     fig.tight_layout()
     return fig

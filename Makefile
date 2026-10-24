@@ -9,13 +9,13 @@
 
 REPORT := report
 
-.PHONY: help render data process diagrams figures pdf spell nbserver all clean dashboard dashboard-assets
+.PHONY: help render data process diagrams figures poster anim pipeline-assets pipeline-clips pdf spell nbserver all clean dashboard dashboard-assets
 
 help: ## Muestra los targets disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
-render: diagrams figures pdf ## Diagramas + figuras + PDF (comando diario)
+render: diagrams figures poster pipeline-assets pdf ## Diagramas + figuras + póster + frames + PDF
 
 data: ## Refresca datos: main.py update-dataset (manifiesto 24h; extra args con ARGS="--force")
 	uv run python main.py update-dataset $(ARGS)
@@ -34,6 +34,20 @@ diagrams: ## Compila report/diagrams/*.mmd -> figures/diagram_*.pdf (mmdc)
 		echo "  diagrams/$$name.mmd -> figures/diagram_$$name.pdf"; \
 		mmdc -i "$$d" -o "$(REPORT)/figures/diagram_$$name.pdf" || exit 1; \
 	done
+
+poster: ## Póster vectorial de la animación para el informe (sin video)
+	uv run python $(REPORT)/make_animation.py --poster-only
+
+pipeline-assets: ## Exporta los 8 frames y el guion de la animación para el dashboard
+	uv run python $(REPORT)/make_animation.py --export-scenes dashboard/assets/pipeline
+
+pipeline-clips: ## Genera los 8 GIF animados por escena (requiere el MP4 maestro)
+	uv run python $(REPORT)/make_animation.py --export-clips report/anim/scenes
+
+anim: ## Genera la animación completa: MP4 + GIF + póster + frames + clips
+	uv run python $(REPORT)/make_animation.py
+	uv run python $(REPORT)/make_animation.py --export-scenes dashboard/assets/pipeline
+	uv run python $(REPORT)/make_animation.py --export-clips report/anim/scenes
 
 pdf: ## Compila el informe con Tectonic -> report/build/main.pdf
 	@mkdir -p $(REPORT)/build
@@ -62,13 +76,13 @@ spell: ## Advertencias de ortografía (aspell es, modo TeX) — nunca bloquea
 dashboard: ## Lanza el dashboard Streamlit (http://localhost:8501)
 	uv run streamlit run dashboard/app.py
 
-dashboard-assets: ## Regenera los parquet que consume el dashboard
+dashboard-assets: pipeline-assets ## Regenera los parquet y los frames que consume el dashboard
 	uv run python dashboard/scripts/export_assets.py
 
 nbserver: ## Lanza jupyter lab con raíz en modelado/ (conectar VS Code: "Existing Jupyter Servers")
 	uv run jupyter lab --notebook-dir=modelado --no-browser
 
-all: data render ## Refresco completo: datos + diagramas + figuras + PDF
+all: data render ## Refresco completo: datos + diagramas + figuras + frames + PDF
 
 clean: ## Elimina salidas de compilación (report/build)
 	rm -rf $(REPORT)/build

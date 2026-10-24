@@ -33,6 +33,21 @@ cd final_project/report
 tectonic --keep-intermediates --keep-logs -o build main.tex
 ```
 
+La animación del pipeline (60 s) no se incrusta en `main.pdf`: se genera
+aparte y el informe incluye solo su fotograma final. Recorre fuentes →
+ingesta → LLM/caché → replay → indexer horario → indexer diario → EDA/NA →
+resumen.
+
+```bash
+make anim              # MP4 + GIF + póster + frames + clips por escena
+make poster            # solo el póster vectorial (lo usa `make render`)
+make pipeline-assets   # solo los 8 frames + guion para el dashboard
+make pipeline-clips    # solo los 8 GIF animados por escena
+```
+
+El notebook (sección 2.2) reproduce las ocho escenas como clips animados; el
+dashboard las muestra en la sección 3.6, también con el video completo.
+
 Orden importante: `reporte_modelado.py` consume
 `modelado/outputs/informe_direccion.csv`, que produce el notebook. Si se
 regeneran datos, correr el notebook **antes** del reporte.
@@ -41,12 +56,16 @@ regeneran datos, correr el notebook **antes** del reporte.
 
 | Ruta | Contenido |
 |---|---|
-| `data/processed/market_hourly.csv` | serie horaria del mercado (4 296 h) |
+| `data/processed/market_hourly.csv` | serie horaria del mercado (4 318 h) |
 | `modelado/panel_diario.csv` | panel mercado × Gaceta (179 días × 17 columnas) |
 | `models/` | funciones puras: regresión, ARIMA, event study |
 | `charts/figuras.py` | figuras del informe como funciones |
 | `modelado/reporte_modelado.py` | métricas y `metricas_reporte.json` |
 | `modelado/proyecto_notebook.ipynb` | notebook de resultados (el que alimenta el informe) |
+| `report/make_animation.py` | animación del pipeline (MP4, GIF, póster y guion) |
+| `report/anim/` | `pipeline.mp4` y `pipeline.gif` |
+| `dashboard/assets/pipeline/` | 8 frames + `scenes.json` para la sección 3.6 |
+| `report/anim/scenes/` | 8 GIF animados, uno por escena |
 | `report/` | informe LaTeX y sus secciones |
 
 ---

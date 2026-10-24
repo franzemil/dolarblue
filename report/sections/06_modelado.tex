@@ -51,13 +51,15 @@ pronóstico: $y(t-1)$ para 1~h e $y(t-24)$ para 24~h.}
 \begin{figure}[!ht]
 \centering
 \includegraphics[width=\textwidth]{fig_rl_test.pdf}
-\caption{Regresión lineal múltiple a un día (24~h) frente al observado y al
-naïve, en la ventana de prueba (168~h). Cada target ocupa dos paneles: arriba el
-nivel y abajo el \textbf{error} (predicción $-$ observado), con su sesgo medio.
-En el nivel el error es casi constante ($-0{,}119$~Bs: predice sistemáticamente
-por debajo); en la brecha el modelo se desborda en los extremos (llega a
-$-1{,}3$\,pp cuando el rango observado es $0{,}8$--$1{,}8$), que es el origen de
-su RMSE de $0{,}886$.}
+\caption{Regresión lineal múltiple a una hora (columna izquierda) y a un día
+(columna derecha) frente al observado y al naïve, en la ventana de prueba
+(168~h). Cada columna muestra, para la brecha y el nivel del blue, el nivel
+(arriba) y el \textbf{error} (predicción $-$ observado, abajo), con su sesgo
+medio. A 24~h el error de nivel es casi constante ($-0{,}119$~Bs: predice
+sistemáticamente por debajo); en la brecha el modelo se desborda en los extremos
+(llega a $-2{,}5$\,pp cuando el rango observado es $0{,}8$--$1{,}8$), que es el
+origen de su RMSE de $0{,}886$. A una hora el sesgo también es negativo
+($-0{,}081$~Bs) y el RMSE del nivel multiplica por $10{,}6$ al del naïve.}
 \label{fig:rl_test}
 \end{figure}
 

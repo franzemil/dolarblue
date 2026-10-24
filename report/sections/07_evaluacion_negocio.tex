@@ -35,15 +35,14 @@ Horizonte & & predice sube & predice baja \\
 \end{tabular}
 \caption{Matriz de confusión de dirección del nivel del blue (ARIMA con origen
 móvil). Accuracy $0{,}571$ a 1~h ($n=140$) y $0{,}485$ a 24~h ($n=163$).}
-\label{tab:matriz_costos}
+\label{tab:matriz_direccion}
 \end{table}
 
-A una hora el modelo evita 35 de las 66 bajadas y pierde 29 subas: conviene
-mientras $35\,C_{FP} > 29\,C_{FN}$, es decir \textbf{siempre que
-$C_{FN}/C_{FP} < 1{,}21$}. Con costos simétricos ahorra 6 de 66 unidades
-($9{,}1\%$). A un día la relación se invierte y el umbral cae a
-$23/54 = 0{,}43$, con accuracy por debajo del azar: \textbf{la señal direccional
-es un fenómeno de una hora, no de un día}.
+A una hora el modelo evita 35 de las 66 bajadas y pierde 29 subas. El umbral
+de decisión es $TN/FN = 35/29 = 1{,}21$: por cada suba perdida, la señal
+necesita evitar 1{,}21 bajadas para empatar. A un día la relación se invierte
+y el umbral cae a $23/54 = 0{,}43$, con accuracy por debajo del azar:
+\textbf{la señal direccional es un fenómeno de una hora, no de un día}.
 
 \begin{figure}[!ht]
 \centering
@@ -66,8 +65,6 @@ invierte el signo de sus predicciones.
 \begin{itemize}
   \item El ahorro supone fijar el precio con el pronóstico; a precio de mercado
         es cero.
-  \item $C_{FP}$ y $C_{FN}$ no se estimaron con datos de la empresa: el
-        resultado es un umbral de decisión, no una cifra contable.
   \item Una sola semana de evaluación: los umbrales deben revisarse con más
         ventanas antes de usarse operativamente.
 \end{itemize}

@@ -23,13 +23,17 @@ with tabs[0]:
     d24 = a24["mae_naive"] - a24["mae"]
     ui.kpis([
         {"label": "MAE ARIMA · 1 h", "value": F.num(a1["mae"], 4),
-         "nota": f'naïve {F.num(a1["mae_naive"], 4)} Bs/USD'},
+         "nota": f'naïve {F.num(a1["mae_naive"], 4)} Bs/USD',
+         "ayuda": "Error absoluto medio del ARIMA para el nivel del blue a 1 hora, en Bs/USD. Promedia |predicción - observado|. Menor es mejor; el naïve es la referencia."},
         {"label": "MAE ARIMA · 24 h", "value": F.num(a24["mae"], 4),
-         "nota": f'naïve {F.num(a24["mae_naive"], 4)} Bs/USD'},
+         "nota": f'naïve {F.num(a24["mae_naive"], 4)} Bs/USD',
+         "ayuda": "Error absoluto medio del ARIMA para el nivel del blue a 24 horas, en Bs/USD. Promedia |predicción - observado|. Menor es mejor; el naïve es la referencia."},
         {"label": "ΔMAE · 1 h", "value": F.num(d1, 4),
-         "nota": "ahorro por precisión (Bs/USD)", "tono": "bad"},
+         "nota": "ahorro por precisión (Bs/USD)", "tono": "bad",
+         "ayuda": "Diferencia entre el MAE del naïve y el del ARIMA a 1 hora: MAE_naïve - MAE_ARIMA. Mide el ahorro por precisión en Bs/USD. 0 = empate; positivo = ahorro."},
         {"label": "ΔMAE · 24 h", "value": F.num(d24, 4),
-         "nota": "ahorro por precisión (Bs/USD)", "tono": "bad"},
+         "nota": "ahorro por precisión (Bs/USD)", "tono": "bad",
+         "ayuda": "Diferencia entre el MAE del naïve y el del ARIMA a 24 horas: MAE_naïve - MAE_ARIMA. Mide el ahorro por precisión en Bs/USD. 0 = empate; positivo = ahorro."},
     ])
     ui.lectura(
         "El error que importa en una operación de compra/venta es el MAE en Bs "
@@ -59,9 +63,15 @@ with tabs[0]:
     delta = d1 if horizonte_roi == 1 else d24
     ahorro_sem = delta * volumen
     with c2:
-        st.metric("ΔMAE aplicado", f"{F.num(delta, 4)} Bs/USD")
-        st.metric("Ahorro semanal", f"{F.num(ahorro_sem, 0)} Bs")
-        st.metric("Ahorro anual", f"{F.num(ahorro_sem * 52, 0)} Bs")
+        st.metric("ΔMAE aplicado", f"{F.num(delta, 4)} Bs/USD",
+                  help="MAE del naïve menos MAE del ARIMA para el horizonte "
+                       "elegido. Si es 0, el modelo no mejora el error típico.")
+        st.metric("Ahorro semanal", f"{F.num(ahorro_sem, 0)} Bs",
+                  help="ΔMAE × volumen semanal operado. Es el ahorro por "
+                       "precisión, no por dirección.")
+        st.metric("Ahorro anual", f"{F.num(ahorro_sem * 52, 0)} Bs",
+                  help="Ahorro semanal × 52 semanas. Supone el mismo ΔMAE y "
+                       "volumen todo el año.")
 
     st.markdown(
         "La tabla del informe muestra el mismo cálculo para tres volúmenes. "
@@ -144,17 +154,20 @@ with tabs[1]:
     ui.kpis([
         {"label": "Accuracy", "value": F.num(fila.accuracy, 3),
          "nota": f'{modelo} · {C.NOMBRE_HORIZONTE.get(h, f"{h} h")}',
-         "tono": "good" if fila.accuracy > 0.5 else "bad"},
+         "tono": "good" if fila.accuracy > 0.5 else "bad",
+         "ayuda": "Proporción de aciertos de dirección: (TP + TN) / n. 0,5 equivale al azar; mayor es mejor."},
         {"label": "Aciertos", "value": f"{int(fila.aciertos)} / {int(fila.n)}",
-         "nota": f'{subas} subas · {bajadas} bajadas'},
-        {"label": "Umbral C_FN / C_FP",
+         "nota": f'{subas} subas · {bajadas} bajadas',
+         "ayuda": "Aciertos sobre horas evaluadas con dirección distinta de cero. Se excluyen las horas sin cambio."},
+        {"label": "Umbral TN / FN",
          "value": F.num(umbral, 2),
-         "nota": "aporta si el costo relativo es menor",
-         "tono": "good" if umbral > 1 else "bad"},
-        {"label": "Ahorro con costos simétricos",
-         "value": f"{F.num(mc['tn'] - mc['fn'], 0)} / {bajadas}",
-         "nota": "unidades frente a no operar",
-         "tono": "good" if mc["tn"] > mc["fn"] else "bad"},
+         "nota": "bajadas evitadas por suba perdida",
+         "tono": "good" if umbral > 1 else "bad",
+         "ayuda": "Cociente TN/FN: bajadas evitadas por cada suba perdida."},
+        {"label": "Bajadas evitadas",
+         "value": f"{mc['tn']} / {bajadas}",
+         "nota": "TN / (FP + TN)",
+         "ayuda": "Proporción de bajadas anticipadas correctamente. No mide ahorro monetario."},
     ])
 
     izq, der = st.columns([1, 1.15], gap="large")
@@ -163,7 +176,7 @@ with tabs[1]:
             G.confusion_heatmap(mc, height=330),
             f"Matriz de confusión de la dirección del nivel, {modelo} a {h} h. "
             "La celda muestra el conteo y su participación en el total.",
-            "tab:matriz_costos",
+            "tab:matriz_direccion",
         )
     with der:
         st.markdown(
@@ -175,16 +188,13 @@ with tabs[1]:
 - **FP** {mc['fp']} · anticipó una suba que no ocurrió.
 - **TN** {mc['tn']} · anticipó una baja correctamente.
 
-El modelo conviene frente a no operar mientras
-`TN · C_FP > FN · C_FN`, es decir mientras
-`C_FN / C_FP < {F.num(umbral, 2)}`.
+El umbral TN/FN es `TN / FN = {mc['tn']} / {mc['fn']} = {F.num(umbral, 2)}`.
 """
         )
         if umbral < 1:
             st.caption(
-                "Con un umbral menor que 1, la señal solo sirve si las subas "
-                "perdidas cuestan menos que las bajadas evitadas: en la "
-                "práctica, no sirve."
+                "Con un umbral menor que 1, la señal pierde más subas de las "
+                "que evita bajadas: no alcanza el empate."
             )
 
     roc = data.roc()
@@ -210,19 +220,20 @@ El modelo conviene frente a no operar mientras
         tabla_dir,
         "Matriz de confusión y accuracy por modelo, calculadas con las mismas "
         "predicciones walk-forward de la sección 5.",
-        "tab:matriz_costos",
+        "tab:matriz_direccion",
         formato={"accuracy": 3},
     )
 
-    mc1 = R["matriz_costos"]["1"]
-    mc24 = R["matriz_costos"]["24"]
+    # compatibilidad con una caché de Streamlit anterior al renombre
+    md = R.get("matriz_direccion") or R.get("matriz_costos") or {}
+    mc1 = md["1"]
+    mc24 = md["24"]
     ui.lectura(
         f"A una hora el modelo evita {mc1['tn']} de las "
-        f"{mc1['fp'] + mc1['tn']} bajadas y pierde {mc1['fn']} subas: conviene "
-        f"mientras {mc1['tn']}·C_FP > {mc1['fn']}·C_FN, es decir siempre que "
-        f"C_FN/C_FP < <b>{F.num(mc1['umbral'], 2)}</b>. A un día la relación se "
-        f"invierte: el umbral cae a {F.num(mc24['umbral'], 2)} y la accuracy "
-        f"queda por debajo del azar ({F.num(mc24['accuracy'], 3)}). "
+        f"{mc1['fp'] + mc1['tn']} bajadas y pierde {mc1['fn']} subas: el umbral "
+        f"TN/FN es <b>{F.num(mc1['umbral'], 2)}</b>. A un día el umbral cae a "
+        f"{F.num(mc24['umbral'], 2)} y la accuracy queda por debajo del azar "
+        f"({F.num(mc24['accuracy'], 3)}). "
         "<b>La señal direccional es un fenómeno de una hora, no de un día.</b>",
     )
 
@@ -235,17 +246,15 @@ with tabs[2]:
 - **El ahorro supone fijar el precio con el pronóstico.** A precio de mercado
   es cero: la comparación es contra el naïve, no contra una mesa de cambios
   real.
-- **C_FP y C_FN no se estimaron con datos de la empresa.** El resultado es un
-  umbral de decisión, no una cifra contable.
 - **Una sola semana de evaluación.** Los umbrales deben revisarse con más
   ventanas antes de usarse operativamente.
 - **La accuracy no basta.** Un modelo que siempre predice "sube" acierta la
-  tasa base; por eso el informe reporta TP/FN/FP/TN y el umbral de costos.
+  tasa base; por eso el informe reporta TP/FN/FP/TN y el umbral TN/FN.
 """
     )
     ui.alerta(
         "La evaluación de negocio no convierte una mejora estadística en una "
-        "promesa financiera: acota qué decisión cambia y bajo qué costos.",
+        "promesa financiera: acota qué decisión cambia y con qué regla.",
         titulo="Alcance",
     )
 

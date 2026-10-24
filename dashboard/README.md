@@ -26,6 +26,8 @@ uv run streamlit run dashboard/app.py
   Objetivo 2 (Gaceta) y Limitaciones.
 - **Tres pestañas de evaluación:** error de nivel, señal direccional y
   limitaciones.
+- **Ocho pestañas de trazabilidad:** la sección 3.6 reproduce cada escena de
+  la animación del pipeline con su clip animado, explicación y regla.
 - Selector global de horizonte (1 h / 24 h), descarga de métricas, PDF y CSV.
 - Formato español: coma decimal, miles y fechas `dd/mm/aaaa`.
 
@@ -37,6 +39,8 @@ La app **no re-entrena**: lee artefactos ya generados.
 |---|---|
 | `modelado/metricas_reporte.json` | métricas, tablas y matrices del informe |
 | `dashboard/assets/*.parquet` | series, predicciones, OLS-HAC y ROC curados |
+| `dashboard/assets/pipeline/` | 8 frames y `scenes.json` de la animación |
+| `report/anim/scenes/` | 8 GIF animados por escena |
 | `modelado/outputs/informe_direccion.csv` | matriz de confusión |
 
 `data/` está en `.gitignore`, por eso los parquet de `dashboard/assets/` se
@@ -45,13 +49,16 @@ versionan: permiten arrancar y desplegar sin correr el pipeline.
 ### Regenerar artefactos
 
 ```bash
-make dashboard-assets
-# equivale a: uv run python dashboard/scripts/export_assets.py
+make dashboard-assets   # parquet + frames del pipeline
+make pipeline-assets    # solo los 8 frames + scenes.json
+make pipeline-clips     # solo los 8 GIF animados por escena
 ```
 
 El script reutiliza `models/regresion.py` y `models/arima.py`, reconstruye las
 predicciones walk-forward, el OLS-HAC y las curvas ROC, y actualiza
-`assets/manifest.json` con hashes.
+`assets/manifest.json` con hashes. `pipeline-assets` exporta los frames desde
+`report/make_animation.py` sin renderizar el video; `pipeline-clips` corta el
+MP4 maestro en los GIF que animan cada pestaña.
 
 ### Actualización completa
 
@@ -65,7 +72,7 @@ predicciones walk-forward, el OLS-HAC y las curvas ROC, y actualiza
 ```
 dashboard/
 ├── app.py                 # navegación, tema y sidebar
-├── assets/                # parquet curados + logo
+├── assets/                # parquet curados + frames + logo
 ├── core/                  # config, datos, formato, figuras, tablas, UI
 ├── views/                 # una página por sección del informe
 ├── scripts/export_assets.py

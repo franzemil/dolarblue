@@ -1,0 +1,206 @@
+{
+  "generado": "2026-10-24T14:37:13+00:00",
+  "duration": 60.0,
+  "fps": 30,
+  "video": "report/anim/pipeline.mp4",
+  "gif": "report/anim/pipeline.gif",
+  "stats": {
+    "snapshots": 34182,
+    "zero_price": 1,
+    "hours": 4318,
+    "hours_expected": 4321,
+    "market_cols": 17,
+    "duplicates": 0,
+    "warmup_nan": 24,
+    "gaps": [
+      [
+        "2026-04-29 17:00:00+00:00",
+        "2026-04-29 19:00:00+00:00",
+        3
+      ]
+    ],
+    "chart_rows": 4318,
+    "chart_dups": 0,
+    "pdfs": 170,
+    "extracted": 169,
+    "cache_entries": 169,
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "relevance": {
+      "alta": 4,
+      "media": 18,
+      "baja": 34,
+      "nula": 113
+    },
+    "days_total": 181,
+    "days_with_docs": 58,
+    "monto_null": 163,
+    "confidence_mean": 0.9366863905325444,
+    "updated": "2026-10-24 02:33 UTC"
+  },
+  "scenes": [
+    {
+      "n": 1,
+      "key": "fuentes",
+      "short": "Fuentes",
+      "title": "Dos fuentes, dos ritmos",
+      "subtitle": "cotizaciones de mercado y normas publicadas en PDF",
+      "start": 0.0,
+      "end": 6.0,
+      "duration": 6.0,
+      "lead": "El pipeline tiene dos entradas que no se parecen: snapshots JSON de cotizaciones y PDFs de normas. El colector no interpreta el contenido; persiste el original y deja la normalización para la etapa siguiente.",
+      "bullets": [
+        "API: endpoints públicos y privados, `X-API-Key` y ventana móvil de 6 meses.",
+        "Gaceta: listado de ediciones tipo 13, ventana de 122 días y un PDF por norma.",
+        "Manifiesto de corrida: si `updated_at` tiene menos de 24 h, no se descarga nada."
+      ],
+      "rule": "La descarga es la excepción: el manifiesto decide si la corrida está fresca.",
+      "source": "collectors/dolarblue.py · collectors/gaceta.py · main.py update-dataset",
+      "image": "scene_01_fuentes.png",
+      "clip": "scene_01_fuentes.gif"
+    },
+    {
+      "n": 2,
+      "key": "ingesta",
+      "short": "Ingesta",
+      "title": "Ingesta: descargar una sola vez",
+      "subtitle": "manifiesto de 24 h + cache de archivo antes de tocar la red",
+      "start": 6.0,
+      "end": 15.0,
+      "duration": 9.0,
+      "lead": "La API se normaliza con Pydantic y se escribe como CSV. Los PDFs se buscan primero en disco: si el archivo existe y supera 1 KB, se reutiliza sin hacer ningún request.",
+      "bullets": [
+        "Snapshot crudo → `raw/`; normalización → `normalized/*.csv` + `history_full.csv`.",
+        "PDF ausente → `GET` + validación `%PDF`; la descarga tiene 3 intentos con backoff.",
+        "Límite conocido: los PDFs ya cacheados se validan por tamaño, no por firma; `%PDF` se exige solo en descargas nuevas."
+      ],
+      "rule": "El cache de archivo evita pedir dos veces el mismo PDF; el manifiesto evita repetir la corrida completa.",
+      "source": "collectors/base.py::download_file · collectors/gaceta.py",
+      "image": "scene_02_ingesta.png",
+      "clip": "scene_02_ingesta.gif"
+    },
+    {
+      "n": 3,
+      "key": "llm",
+      "short": "LLM",
+      "title": "Extracción LLM: pagar una sola vez",
+      "subtitle": "hash del PDF, cache por proveedor/modelo y reintentos acotados",
+      "start": 15.0,
+      "end": 24.0,
+      "duration": 9.0,
+      "lead": "Cada PDF se identifica por el SHA-256 de su contenido. La clave de cache combina hash, proveedor, modelo y versión; un hit no llama al LLM.",
+      "bullets": [
+        "Miss: `deepseek/deepseek-flash` → JSON → Pydantic → `cache.put`.",
+        "Fallo de red, LLM o esquema: 3 intentos con backoff; si persiste, `schema_invalid` o `llm_failed`.",
+        "`relevancia_fx` es una salida: `nula` se conserva con peso 0, se cachea y **no** se reintenta."
+      ],
+      "rule": "Solo se reintenta un fallo técnico; una etiqueta baja o nula no es un fallo.",
+      "source": "processors/llm_file_processor.py · processors/llm_manifest.py",
+      "image": "scene_03_llm.png",
+      "clip": "scene_03_llm.gif"
+    },
+    {
+      "n": 4,
+      "key": "replay",
+      "short": "Replay",
+      "title": "Procesadores: replay desde disco",
+      "subtitle": "sin red: se reconstruye todo desde lo ya persistido",
+      "start": 24.0,
+      "end": 30.0,
+      "duration": 6.0,
+      "lead": "Los procesadores no descargan: leen lo persistido y reconstruyen las series. `SnapshotReader` alimenta dos indexers independientes.",
+      "bullets": [
+        "`MarketHourlyIndexer` → `market_hourly.csv` (horas observadas, 0 duplicados).",
+        "`GacetaDailyIndexer` → `gaceta_daily.csv` (calendario diario, días con y sin normas).",
+        "Cada serie conserva su resolución; el cruce horario × diario se hace al modelar con `merge_asof`."
+      ],
+      "rule": "Reprocesar es barato y determinista: no hay red ni LLM en esta etapa.",
+      "source": "processors/indexers.py · main.py process",
+      "image": "scene_04_replay.png",
+      "clip": "scene_04_replay.gif"
+    },
+    {
+      "n": 5,
+      "key": "indexer_h",
+      "short": "Indexer H",
+      "title": "Indexer horario: una fila por hora",
+      "subtitle": "features derivadas y NaN de warm-up / horizonte futuro",
+      "start": 30.0,
+      "end": 39.0,
+      "duration": 9.0,
+      "lead": "El indexer ordena y deduplica por timestamp, calcula precios medios y deriva las features. No imputa: el calentamiento y el futuro no observado quedan `NaN`.",
+      "bullets": [
+        "`blue_mid`, `oficial_mid`, `spread_blue`, `brecha_pct`, `ret_blue_1h`, `vol_24h`.",
+        "`fwd_h = blue_mid.shift(-h) / blue_mid - 1` para h = 1, 6, 24, 72, 168.",
+        "Las primeras 24 h de `vol_24h` y el tramo final de cada `fwd_h` son `NaN` por diseño."
+      ],
+      "rule": "El indexer declara la ausencia; la decisión de imputar o descartar es del modelado.",
+      "source": "processors/indexers.py::MarketHourlyIndexer · models/regresion.py::grilla_horaria",
+      "image": "scene_05_indexer_h.png",
+      "clip": "scene_05_indexer_h.gif"
+    },
+    {
+      "n": 6,
+      "key": "indexer_d",
+      "short": "Indexer D",
+      "title": "Indexer diario: calendario completo",
+      "subtitle": "cada día del rango existe; sin publicación → cero estructural",
+      "start": 39.0,
+      "end": 48.0,
+      "duration": 9.0,
+      "lead": "El indexer diario construye un calendario entre la primera y la última fecha. Cada día existe, haya o no publicación.",
+      "bullets": [
+        "Día con norma: conteos, `monto_usd_sum`, `relevancia_max` y `confidence_mean`.",
+        "Día sin norma: conteos, montos y relevancia se rellenan con 0; `confidence_mean` queda `NaN`.",
+        "`gaceta_daily.csv` cubre todo el calendario; el panel de modelado recorta los primeros días sin retorno previo."
+      ],
+      "rule": "El 0 es ausencia de publicación, no un dato faltante; `fillna(0)` no inventa confianza.",
+      "source": "processors/indexers.py::GacetaDailyIndexer · modelado/prepare_datos.py",
+      "image": "scene_06_indexer_d.png",
+      "clip": "scene_06_indexer_d.gif"
+    },
+    {
+      "n": 7,
+      "key": "eda_na",
+      "short": "EDA y NA",
+      "title": "EDA y faltantes: decidir, no rellenar a ciegas",
+      "subtitle": "interpolación acotada, ceros estructurales y NaN explícitos",
+      "start": 48.0,
+      "end": 55.0,
+      "duration": 7.0,
+      "lead": "El EDA separa tres ausencias: el precio cero del crudo, el hueco horario y el día sin Gaceta. Antes de imputar hay que entender por qué falta cada dato: un `NaN` es una pregunta, no un cero.",
+      "bullets": [
+        "Precio 0: snapshot inválido → se descarta; no se imputa.",
+        "Hueco ≤ 3 h: `interpolate(limit=3)`; un hueco mayor queda `NaN`.",
+        "Día sin Gaceta: conteos, montos y relevancia = 0; `confidence_mean` = `NaN`.",
+        "`vol_24h` (warm-up) y `fwd_*` (futuro): `NaN` por diseño, no 0.",
+        "Antes de imputar: cuantificar, entender el mecanismo y documentar la regla."
+      ],
+      "rule": "Un `NaN` es una pregunta, no un cero: primero se interpreta y después se aplica una regla explícita. Rellenar a ciegas inventa datos y sesga el modelo.",
+      "source": "models/regresion.py · processors/indexers.py",
+      "image": "scene_07_eda_na.png",
+      "clip": "scene_07_eda_na.gif"
+    },
+    {
+      "n": 8,
+      "key": "resumen",
+      "short": "Resumen",
+      "title": "Resumen: cuatro garantías",
+      "subtitle": "lo que el pipeline evita repetir y lo que declara como faltante",
+      "start": 55.0,
+      "end": 60.0,
+      "duration": 5.0,
+      "lead": "El pipeline evita repetir trabajo y declara lo que falta. Estas cuatro garantías son la lectura operativa del recorrido.",
+      "bullets": [
+        "No re-descarga: manifiesto de 24 h + cache de archivo.",
+        "No re-extracción: SHA-256 + proveedor + modelo → todos los hits, costo marginal $0.",
+        "Reintento acotado: 3 intentos; el fallo no se cachea.",
+        "Faltantes explícitos: huecos ≤ 3 h interpolados, días sin norma en 0, warm-up declarado."
+      ],
+      "rule": "Hacia afuera es idempotente; hacia adentro es explícito.",
+      "source": "report/make_animation.py · data/processed/llm_manifest.json",
+      "image": "scene_08_resumen.png",
+      "clip": "scene_08_resumen.gif"
+    }
+  ]
+}

@@ -573,7 +573,7 @@
       "t1": 0.036
     }
   },
-  "matriz_costos": {
+  "matriz_direccion": {
     "1": {
       "modelo": "ARIMA (1 pasos)",
       "tp": 45,

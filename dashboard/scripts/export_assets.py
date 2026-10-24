@@ -68,9 +68,14 @@ def cargar():
                          parse_dates=["fecha_publicacion"])
     crudo = pd.read_csv(ROOT / "data/history_full.csv")
     crudo["fecha"] = pd.to_datetime(crudo["timestamp"], unit="s")
-    crudo = crudo[(crudo.blue_sell > 0) & (crudo.official_sell > 0)].copy()
-    crudo["brecha_snapshot"] = (crudo.blue_sell / crudo.official_sell - 1) * 100
-    crudo = crudo[["fecha", "blue_sell", "brecha_snapshot"]]
+    crudo = crudo[
+        (crudo.blue_buy > 0) & (crudo.blue_sell > 0)
+        & (crudo.official_buy > 0) & (crudo.official_sell > 0)
+    ].copy()
+    crudo["brecha_buy"] = (crudo.blue_buy / crudo.official_buy - 1) * 100
+    crudo["brecha_sell"] = (crudo.blue_sell / crudo.official_sell - 1) * 100
+    crudo = crudo[["fecha", "blue_buy", "blue_sell", "brecha_buy",
+                   "brecha_sell"]]
     return mercado, panel, gaceta, crudo
 
 
