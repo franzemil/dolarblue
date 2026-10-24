@@ -1,0 +1,73 @@
+\section{Preparación de datos}
+\label{sec:preparacion}
+
+Esta fase transforma las fuentes crudas descritas en la
+\hyperref[sec:datos]{sección~\ref*{sec:datos}} en una tabla lista para
+modelar, con el objetivo de \textbf{predecir} el nivel del paralelo y la
+brecha oficial--paralelo a horizontes cortos. El énfasis del proyecto está en
+la previsión, no en el monitoreo en tiempo real: cada decisión de
+preparación se toma pensando en evitar fuga de información y en reproducir el
+orden temporal real de los datos.
+
+\subsection{Del JSON crudo a los predictores del modelo}
+
+El camino desde la API hasta los predictores tiene cuatro etapas:
+
+\begin{enumerate}
+  \item \textbf{Recolección.} Un colector consulta el endpoint
+        \texttt{GET /v1/chart/6m} de la API y guarda cada respuesta como
+        snapshot JSON en \texttt{data/raw/}: una lista de puntos muestreados
+        cada hora.
+  \item \textbf{Normalización.} Se elimina el envoltorio de la API y cada
+        punto se valida contra un esquema tipado; el resultado se escribe en
+        \texttt{data/normalized/chart\_6m.csv}. Toda la API se reduce a
+        5 columnas: \texttt{t} (epoch, una fila por hora), \texttt{bb}/\texttt{bs}
+        (blue compra/venta, Bs/USD) y \texttt{ob}/\texttt{os} (oficial
+        compra/venta).
+  \item \textbf{Ingeniería de características.} Una etapa de indexación deriva
+        los puntos medios, el spread, la brecha porcentual, el retorno por hora
+        y la volatilidad rodante de 24~h; las columnas \texttt{fwd\_*} son
+        retornos futuros (etiquetas de previsión, no predictores). Resultado:
+        \texttt{data/processed/market\_hourly.csv} (4\,315 filas
+        $\times$ 17 columnas).
+  \item \textbf{Predictores del modelo.} Los modelos lineales consumen
+        rezagos de esos campos más los canales de la Gaceta:
+        \begin{itemize}
+          \item \textbf{Variante por hora (37 predictores):} rezagos de brecha
+                (1, 3 y 24~h), oficial, volatilidad y retorno (todos con
+                \texttt{shift(1)}, sin fuga); canales de la Gaceta contados
+                por día (\texttt{n\_docs\_fx}, \texttt{n\_docs\_fx\_alta},
+                sobre 509 normas etiquetadas por palabras clave) y
+                transmitidos a cada hora del día siguiente;
+                dummies de hora (23) y de día de semana (6).
+        \end{itemize}
+\end{enumerate}
+
+\subsection{Remuestreo a frecuencia fija}
+
+Las fuentes no son uniformes: \texttt{history\_full.csv} registra snapshots
+por eventos y los exchanges cambian de periodicidad. Todo se alinea a una
+\textbf{frecuencia horaria} (4\,321 filas): se conserva el último precio
+observado y se interpolan huecos de hasta 3 períodos. La frecuencia diaria se usa
+solo para los canales de la Gaceta, que tienen resolución de publicación.
+
+
+\subsection{Variable objetivo y conjunto de eventos}
+
+El problema se formula como \textbf{previsión supervisada} a dos horizontes:
+el nivel del paralelo (o la brecha) \textbf{a una hora y a un día}, con
+intervalos que cuantifiquen la incertidumbre. Para cada horizonte $h$ los
+predictores usan solo información disponible en $t-h$, y la línea base naïve
+repite el último valor observado en ese origen. Para el Objetivo~2 se cruza la serie horaria con las fechas de
+edición de la Gaceta: por cada publicación se toma el precio ancla (12:00~UTC)
+y se miden retornos a 5~h, 1, 3 y 5 días contra la variación media de todos los
+días de la serie (línea base incondicional).
+
+\subsection{Partición temporal y línea base}
+
+La partición respeta el orden temporal, nunca una división aleatoria: el
+ventana de prueba es el \textbf{último corte temporal} (las últimas 168~h), el mismo
+para todos los modelos. Se define una
+\textbf{línea base naïve} (último valor observado, equivalente al paseo
+aleatorio) que todo modelo debe superar fuera de muestra: en tipos de cambio
+es un referente notoriamente difícil de batir.

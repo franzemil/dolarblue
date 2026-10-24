@@ -50,29 +50,12 @@ env/
 jupyter_execute/
 
 # ═══ Datos ═══════════════════════════════════════════════════════════════════
-# Misma regla que con los parquet: por defecto no se versiona nada de data/ y se
-# abre la excepción solo a lo que el pipeline necesita en tiempo de ejecución.
-#
-# Versionado (~18 MB):
-#   data/raw/*.json        snapshot crudo -> replay offline (main.py process)
-#   data/sources/          respuesta por endpoint -> idem
-#   data/history_full.csv  insumo de prepare_datos.py
-#   data/processed/*.csv   insumos de los notebooks y del informe
-#
-# NO versionado (~140 MB):
-#   data/gaceta/           170 PDFs (solo para re-extraer con LLM)
-#   data/normalized/       derivado de los snapshots
-#   data/chart_6m.csv      derivado
-#   data/processed/*.json  manifiestos del pipeline
-data/*
-!data/raw/
-!data/sources/
-!data/history_full.csv
-!data/processed/
-data/processed/*.json
-
-# Para el demo con los PDFs incluidos, descomentar:
-#   !data/gaceta/
+# Todo data/ es regenerable con `make data` / `make process`; no se versiona.
+# Capas: raw/ (snapshots), sources/ (payloads), normalized/ (CSV tipados),
+# processed/ (tablas finales) y gaceta/ (PDFs).
+# Los artefactos que el dashboard necesita en runtime viven en
+# dashboard/assets/*.parquet (ver sección Parquet).
+data/
 
 # Intermedios del pipeline que produce prepare_datos.py
 modelado/panel_diario.csv

@@ -1,0 +1,5 @@
+%% flujo_datos.mmd — Obtención de datos: dos fuentes, un procesamiento
+flowchart LR
+    API["API dolarblue<br/>(cotizaciones blue/oficial)"] --> PROC
+    GAC["Gaceta Oficial<br/>(normas en PDF)"] --> LLM["extracción LLM<br/>(normas tipadas)"] --> PROC
+    PROC["PROCESADORES<br/>(replay sin descargas)"] --> OUT["CSVs de análisis<br/>horarios y diarios"]

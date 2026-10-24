@@ -1,0 +1,29 @@
+% ============================================================================
+% WIP — Conclusiones. NO incluidas en el informe todavía (enfoque actual:
+% fases 1--3 de CRISP-DM). Reactivar en main.tex cuando se cierre la evaluación.
+% ============================================================================
+\section{Conclusiones}
+\label{sec:conclusiones}
+
+\begin{itemize}
+  \item Se construyó un pipeline reproducible de recolección y normalización
+        con resultados tipados y trazabilidad por corrida
+        (\texttt{data/manifest.json}), cubriendo las dos fuentes del proyecto: la API
+        dolarbluebolivia.click y la Gaceta Oficial \cite{dolarblue2026api}.
+  \item Se dejó preparada (fases 1--3 de CRISP-DM) la base para predecir el
+        nivel del paralelo y la brecha a horizontes de 1--7 días, con
+        partición temporal y línea base naïve \cite{hyndman2021forecasting}.
+  \item Este informe es, a su vez, parte del entregable: se regenera
+        íntegramente (figuras, tablas, diagramas y PDF) con un único comando
+        (comando en el Apéndice) desde los últimos CSV disponibles.
+\end{itemize}
+
+\subsection{Trabajo futuro}
+
+\begin{itemize}
+  \item Modelar y evaluar la previsión (Objetivo 1) y la relación entre la
+        Gaceta y la brecha (Objetivo 2) con validación walk-forward
+        \cite{box2015timeseries}.
+  \item Respetar la cuota semanal de la API ($\sim$30 llamadas por corrida):
+        ingestas programadas, no exploratorias.
+\end{itemize}

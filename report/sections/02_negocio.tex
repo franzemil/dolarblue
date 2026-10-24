@@ -1,0 +1,98 @@
+\section{Comprensión del negocio}
+\label{sec:negocio}
+
+Proyecto: relación entre el tipo de cambio oficial (BCB), el mercado paralelo
+(\emph{dólar blue}) y el mercado P2P de USDT en Bolivia.
+
+\subsection{Objetivo del negocio y KPIs}
+
+\subsubsection{Definición del problema}
+
+En Bolivia conviven \textbf{dos sistemas de precios del dólar} que no siempre
+coinciden:
+
+\begin{itemize}
+  \item el \textbf{tipo de cambio oficial}, administrado por el Banco Central de
+        Bolivia (BCB), que rige para operaciones bancarias formales, y
+  \item el \textbf{mercado paralelo o ``dólar blue''}, que se forma libremente en
+        plataformas P2P de criptomonedas (Binance, Bybit, Bitget) y
+        fintechs (Airtm, Takenos, El Dorado, Wallbit), cotizado en USDT.
+\end{itemize}
+
+La \textbf{brecha} entre ambos es el principal termómetro de escasez de divisas
+y de presión cambiaria. El problema que aborda este proyecto es de
+\textbf{previsión}: los actores del mercado (importadores, empresas y personas)
+no pueden anticipar el nivel futuro del paralelo, y por lo tanto no pueden
+planificar tesorería ni cobertura con antelación. Se identifican dos problemas
+específicos:
+
+\begin{enumerate}
+  \item \textbf{Falta de anticipación} --- no existen estimaciones del nivel del
+        paralelo ni de la brecha a horizontes cortos (1~hora y 1~día). Predecir el
+        tipo de cambio fuera de muestra es un problema reconocidamente difícil,
+        en el que los modelos estructurales suelen no superar al paseo aleatorio
+        ; aun así, enfoques de aprendizaje automático
+        han mostrado capacidad predictiva en mercados financieros.
+  \item \textbf{Relación no cuantificada} --- se desconoce si las normas
+        publicadas en la Gaceta Oficial (combustibles, controles de cambio,
+        reservas, deuda, etc.) anticipan o acompañan movimientos de la brecha;
+        sin esa evidencia no pueden usarse como señales de política.
+\end{enumerate}
+
+Adicionalmente, la información está fragmentada entre fuentes heterogéneas
+(BCB, bancos, agregadores y plataformas P2P), lo que condiciona la recolección
+de datos y la construcción de una serie única de trabajo.
+
+Definir con precisión este problema determina \textbf{qué datos recolectar}
+(series de precios por fuente con marca de tiempo y origen, volúmenes) y
+\textbf{cómo interpretar los análisis} (toda métrica se lee
+como distancia frente al precio oficial administrado, no como precio absoluto),
+y fija el criterio de éxito: la capacidad de \textbf{anticipar} el paralelo y
+la brecha, y de vincular sus movimientos con las publicaciones de política.
+
+\subsubsection{Objetivos}
+
+\begin{table}[!ht]
+\centering\small
+\begin{tabular}{@{}p{0.15\textwidth}p{0.75\textwidth}@{}}
+\toprule
+\# & Objetivo \\
+\midrule
+Objetivo 1 & Predecir el nivel del paralelo y la brecha oficial--paralelo a
+      1~h y 1~día, con intervalos de predicción \\
+Objetivo 2 & Cuantificar la relación entre las publicaciones de la Gaceta
+      (canales temáticos) y la brecha, en ventanas de $\pm5$ días \\
+\bottomrule
+\end{tabular}
+\caption{Objetivos de predicción.}
+\label{tab:objetivos}
+\end{table}
+
+\subsection{Criterios de éxito}
+
+\begin{itemize}
+  \item Los pronósticos a 1~h y 1~día superan a la línea base naïve (paseo
+        aleatorio) fuera de muestra, medidos con RMSE y MAE
+        \cite{makridakis2020m4}.
+  \item Los intervalos de predicción alcanzan una cobertura empírica cercana
+        al 90\%.
+  \item El estudio de eventos de $\pm5$ días muestra un efecto medible (signo y
+        magnitud, con errores HAC) de las publicaciones relevantes sobre la
+        brecha, o una conclusión documentada de ausencia de relación.
+\end{itemize}
+
+\subsection{Inventario de recursos}
+
+\subsubsection{Recursos --- datos disponibles}
+
+El proyecto dispone de ocho conjuntos de datos: el historial completo de
+snapshots (16,4 mil registros blue vs oficial), ~96 mil snapshots por
+plataforma, la serie horaria alineada de 6 meses (4,3 mil puntos), historial
+por plataforma cada 3~h, velas OHLC del P2P, percentiles y estadísticos
+rodantes, el pipeline reproducible sobre 37 endpoints y el reporte de calidad
+de la propia API.
+
+\textbf{Herramientas y equipo:} Python 3.12 (\texttt{requests}, \texttt{pandas},
+\texttt{matplotlib}, \texttt{seaborn}), análisis exploratorio ya avanzado (EDA
+en PDF, auditoría de predictibilidad) y un analista con acceso a la API (clave
+propia con cuota semanal).
