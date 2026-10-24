@@ -48,6 +48,21 @@ make pipeline-clips    # solo los 8 GIF animados por escena
 El notebook (sección 2.2) reproduce las ocho escenas como clips animados; el
 dashboard las muestra en la sección 3.6, también con el video completo.
 
+### Demo de extracción LLM
+
+```bash
+make llm-demo   # abre modelado/demo_llm_gaceta.ipynb en JupyterLab
+```
+
+El notebook permite subir un PDF propio o usar una norma de la Gaceta, elegir
+**GLM (Z.ai)** o **DeepSeek**, y ver el PDF, el cache, el prompt, el JSON crudo,
+el registro validado y las métricas de tiempo, tokens y costo. Por defecto solo
+lee el cache; para llamar a la API hay que marcar **Confirmo gasto de API**. No
+escribe en `data/`.
+
+El `.env` del proyecto tiene prioridad sobre variables viejas del kernel. Si un
+proveedor devuelve 401, usá **Probar credenciales** y reiniciá el kernel.
+
 Orden importante: `reporte_modelado.py` consume
 `modelado/outputs/informe_direccion.csv`, que produce el notebook. Si se
 regeneran datos, correr el notebook **antes** del reporte.
@@ -62,6 +77,7 @@ regeneran datos, correr el notebook **antes** del reporte.
 | `charts/figuras.py` | figuras del informe como funciones |
 | `modelado/reporte_modelado.py` | métricas y `metricas_reporte.json` |
 | `modelado/proyecto_notebook.ipynb` | notebook de resultados (el que alimenta el informe) |
+| `modelado/demo_llm_gaceta.ipynb` | demo interactiva de extracción LLM (GLM/DeepSeek) |
 | `report/make_animation.py` | animación del pipeline (MP4, GIF, póster y guion) |
 | `report/anim/` | `pipeline.mp4` y `pipeline.gif` |
 | `dashboard/assets/pipeline/` | 8 frames + `scenes.json` para la sección 3.6 |

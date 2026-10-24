@@ -9,7 +9,7 @@
 
 REPORT := report
 
-.PHONY: help render data process diagrams figures poster anim pipeline-assets pipeline-clips pdf spell nbserver all clean dashboard dashboard-assets
+.PHONY: help render data process diagrams figures poster anim pipeline-assets pipeline-clips pdf spell nbserver llm-demo all clean dashboard dashboard-assets
 
 help: ## Muestra los targets disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -81,6 +81,9 @@ dashboard-assets: pipeline-assets ## Regenera los parquet y los frames que consu
 
 nbserver: ## Lanza jupyter lab con raíz en modelado/ (conectar VS Code: "Existing Jupyter Servers")
 	uv run jupyter lab --notebook-dir=modelado --no-browser
+
+llm-demo: ## Abre el notebook de demo de extracción LLM (puede llamar a la API)
+	uv run jupyter lab modelado/demo_llm_gaceta.ipynb
 
 all: data render ## Refresco completo: datos + diagramas + figuras + frames + PDF
 

@@ -145,7 +145,53 @@ desc = hor["brecha_pct"].describe().to_frame("brecha_pct").T
 desc.columns = ["n", "Media", "Desv. estándar", "Mín.", "P25", "Mediana",
                 "P75", "Máx."]
 ui.tabla(desc, "Estadísticos descriptivos de la brecha en la serie horaria.",
-         "notebook · 2.2", formato={c: 2 for c in desc.columns[1:]})
+         "notebook · 2.3", formato={c: 2 for c in desc.columns[1:]})
+
+ui.seccion("Ejemplo de feature: n_docs_fx_alta")
+dias_fx = int((panel["n_docs_fx"] > 0).sum())
+dias_alta = int((panel["n_docs_fx_alta"] > 0).sum())
+normas_fx = int(panel["n_docs_fx"].sum())
+normas_alta = int(panel["n_docs_fx_alta"].sum())
+ui.kpis([
+    {"label": "Días con norma FX", "value": f"{dias_fx} de {len(panel)}",
+     "nota": "relevancia media o alta",
+     "ayuda": "n_docs_fx > 0: días con al menos una norma de relevancia cambiaria media o alta."},
+    {"label": "Días con FX alta", "value": f"{dias_alta} de {len(panel)}",
+     "nota": "solo relevancia alta",
+     "ayuda": "n_docs_fx_alta > 0: días con al menos una norma de relevancia cambiaria alta."},
+    {"label": "Normas FX", "value": F.miles(normas_fx),
+     "nota": "media o alta en el panel",
+     "ayuda": f"Suma diaria de n_docs_fx en los {len(panel)} días del panel."},
+    {"label": "Normas FX alta", "value": F.miles(normas_alta),
+     "nota": "solo alta en el panel",
+     "ayuda": f"Suma diaria de n_docs_fx_alta en los {len(panel)} días del panel."},
+])
+ejemplo = (panel.loc[panel["n_docs_fx_alta"] > 0,
+                    ["fecha_d", "n_docs_total", "n_docs_fx", "n_docs_fx_alta"]]
+           .sort_values("fecha_d").copy())
+for c in ("n_docs_total", "n_docs_fx", "n_docs_fx_alta"):
+    ejemplo[c] = ejemplo[c].fillna(0).astype(int)
+ejemplo["fecha_d"] = ejemplo["fecha_d"].map(F.fecha)
+ui.tabla(
+    ejemplo.rename(columns={
+        "fecha_d": "Fecha",
+        "n_docs_total": "Normas totales",
+        "n_docs_fx": "Normas FX (media+alta)",
+        "n_docs_fx_alta": "Normas FX alta",
+    }),
+    "Días del panel con al menos una norma de relevancia FX alta.",
+    "panel_diario.csv · n_docs_fx_alta",
+    height=260,
+)
+ui.lectura(
+    "<b>n_docs_fx</b> cuenta normas con relevancia media o alta; "
+    "<b>n_docs_fx_alta</b> cuenta solo las de relevancia alta. No es un tag "
+    "ni un score: es un conteo diario. Un día sin publicación aporta 0, no un "
+    f"faltante. Con solo {normas_alta} normas de alta en {len(panel)} días, "
+    "el canal es raro: por eso se rezaga un día y no resulta significativo "
+    "en el OLS-HAC.",
+    titulo="Cómo leerlo",
+)
 
 ui.lectura(
     "La serie horaria cubre 6 meses y 4.318 horas efectivas. El quiebre del "
