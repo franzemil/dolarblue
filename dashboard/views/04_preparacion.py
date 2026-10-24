@@ -28,9 +28,9 @@ pasos = pd.DataFrame([
 ])
 ui.tabla(pasos, "El camino desde la API hasta la tabla de modelado.",
          "05_preparacion.tex · 4.1", height=220)
-st.image(str(C.OUTPUTS / "informe_snapshot.png"),
-         caption="Del snapshot a la serie de modelado: remuestreo horario y "
-                 "agregación diaria de la Gaceta.", width="stretch")
+ui.imagen(C.ASSETS / "diagrams" / "informe_snapshot.png",
+          "Del snapshot a la serie de modelado: remuestreo horario y "
+          "agregación diaria de la Gaceta.")
 
 ui.seccion("4.2 · Remuestreo a frecuencia fija")
 ui.kpis([

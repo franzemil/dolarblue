@@ -110,10 +110,8 @@ def ols_hac() -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def direccion() -> pd.DataFrame:
-    ruta = OUTPUTS / "informe_direccion.csv"
-    if ruta.exists():
-        return pd.read_csv(ruta)
-    return pd.DataFrame()
+    df = _asset("direccion.parquet", OUTPUTS / "informe_direccion.csv")
+    return df if df is not None else pd.DataFrame()
 
 
 @st.cache_data(show_spinner=False)
@@ -183,9 +181,8 @@ def estado_assets() -> list[dict]:
          "walk-forward 24 h"),
         ("roc_curvas.parquet", ASSETS / "roc_curvas.parquet", "ROC / AUC"),
         ("ols_hac.parquet", ASSETS / "ols_hac.parquet", "coeficientes HAC"),
-        ("informe_direccion.csv", OUTPUTS / "informe_direccion.csv",
+        ("direccion.parquet", ASSETS / "direccion.parquet",
          "matriz de confusión"),
-        ("arima_grid_aic.csv", OUTPUTS / "arima_grid_aic.csv", "grilla AIC"),
     ]
     out = []
     for nombre, ruta, uso in filas:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import html
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -262,6 +263,21 @@ def figura_mpl(fig, caption_txt: str | None = None,
     plt.close(fig)
     if caption_txt:
         caption(caption_txt, origen)
+
+
+def imagen(ruta, caption_txt: str | None = None) -> None:
+    """Imagen local con degradación limpia si el asset no está disponible."""
+    ruta = Path(ruta)
+    if ruta.exists():
+        try:
+            st.image(str(ruta), caption=caption_txt, width="stretch")
+            return
+        except Exception:
+            pass
+    st.warning(
+        f"No se pudo cargar la imagen `{ruta.name}`. "
+        "Regenerá los assets del dashboard con `make dashboard-assets`."
+    )
 
 
 def vacio(mensaje: str, comando: str | None = None) -> None:

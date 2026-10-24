@@ -1,5 +1,5 @@
 {
-  "generado": "2026-10-24T13:07:54+00:00",
+  "generado": "2026-10-24T15:00:01+00:00",
   "datos_desde": "2026-04-27 02:00:00",
   "datos_hasta": "2026-10-24 02:00:00",
   "horas": 4321,
@@ -20,6 +20,7 @@
   },
   "sha256": {
     "crudo.parquet": "1bab6ab304b5",
+    "direccion.parquet": "9c9ca427bb85",
     "gaceta.parquet": "76fb97f9325c",
     "mercado.parquet": "44af413af824",
     "ols_hac.parquet": "1dadabb66446",

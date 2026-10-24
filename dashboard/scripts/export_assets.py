@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import sys
 import time
 import warnings
@@ -42,6 +43,13 @@ H = 168
 HORIZONTES = (1, 24)
 TARGETS = ("blue_mid", "brecha_pct")
 OUT = ASSETS
+OUTPUTS = MODELADO / "outputs"
+DIAGRAMAS = (
+    "informe_flujo_datos.png",
+    "informe_recoleccion.png",
+    "informe_snapshot.png",
+    "informe_hac_z.png",
+)
 
 
 def rmse(a, b) -> float:
@@ -58,6 +66,28 @@ def _sha(path: Path) -> str:
     h = hashlib.sha256()
     h.update(path.read_bytes())
     return h.hexdigest()[:12]
+
+
+def exportar_direccion() -> None:
+    """Copia la matriz de confusión a dashboard/assets para Streamlit Cloud."""
+    src = OUTPUTS / "informe_direccion.csv"
+    if not src.exists():
+        print(f"  aviso: falta {src}; se conserva la dirección anterior")
+        return
+    df = pd.read_csv(src)
+    df.to_parquet(OUT / "direccion.parquet", index=False)
+    print(f"  dirección: {len(df)} filas -> direccion.parquet")
+
+
+def exportar_diagramas() -> None:
+    """Copia los diagramas del informe que usa el dashboard."""
+    dest = OUT / "diagrams"
+    dest.mkdir(parents=True, exist_ok=True)
+    for name in DIAGRAMAS:
+        src = OUTPUTS / name
+        if src.exists():
+            shutil.copy2(src, dest / name)
+    print(f"  diagramas: {len(list(dest.glob('*.png')))} archivos")
 
 
 def cargar():
@@ -187,6 +217,8 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     print(f"→ exportando assets en {OUT.relative_to(ROOT)}")
     mercado, panel, gaceta, crudo = cargar()
+    exportar_direccion()
+    exportar_diagramas()
 
     mercado.to_parquet(OUT / "mercado.parquet", index=False)
     panel.to_parquet(OUT / "panel.parquet", index=False)

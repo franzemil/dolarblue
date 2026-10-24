@@ -25,12 +25,10 @@ indexación deriva los puntos medios, el spread, la brecha porcentual, el retorn
 horario y la volatilidad rodante de 24 h.
 """
 )
-st.image(str(C.OUTPUTS / "informe_flujo_datos.png"),
-         caption="Obtención de datos: las dos fuentes convergen en los "
-                 "procesadores.", width="stretch")
-st.image(str(C.OUTPUTS / "informe_recoleccion.png"),
-         caption="Del snapshot crudo a los predictores del modelo.",
-         width="stretch")
+ui.imagen(C.ASSETS / "diagrams" / "informe_flujo_datos.png",
+          "Obtención de datos: las dos fuentes convergen en los procesadores.")
+ui.imagen(C.ASSETS / "diagrams" / "informe_recoleccion.png",
+          "Del snapshot crudo a los predictores del modelo.")
 
 ui.seccion("3.2 · Fuentes y cobertura")
 tabla_cob = pd.DataFrame([
@@ -195,11 +193,17 @@ else:
     video = C.REPORT / "anim" / "pipeline.mp4"
     if video.exists():
         with st.expander("Ver la animación completa (60 s)"):
-            st.video(str(video))
-            st.caption(
-                "MP4 1920×1080 · 30 fps · también disponible en "
-                "`report/anim/pipeline.gif`."
-            )
+            try:
+                st.video(str(video))
+                st.caption(
+                    "MP4 1920×1080 · 30 fps · también disponible en "
+                    "`report/anim/pipeline.gif`."
+                )
+            except Exception:
+                st.warning(
+                    "No se pudo cargar el MP4 en este entorno; "
+                    "usá los frames de las pestañas."
+                )
     else:
         st.caption(
             "El MP4 no está disponible en este entorno; los ocho frames sí. "
@@ -214,14 +218,14 @@ else:
             st.markdown(spec["lead"])
             clip = clip_dir / spec.get("clip", "")
             if spec.get("clip") and clip.exists():
-                st.image(str(clip), width="stretch")
+                ui.imagen(clip)
                 st.caption(
                     f"Escena {spec['n']}/8 · {spec['start']:.0f}–{spec['end']:.0f} s "
                     f"· animación en loop ({spec['duration']:.0f} s) · "
                     f"{spec['subtitle']}"
                 )
             else:
-                st.image(str(PIPE_DIR / spec["image"]), width="stretch")
+                ui.imagen(PIPE_DIR / spec["image"])
                 st.caption(
                     f"Escena {spec['n']}/8 · {spec['start']:.0f}–{spec['end']:.0f} s "
                     f"· frame final · generá `make anim` para ver la animación"

@@ -122,9 +122,8 @@ with tabs[1]:
             "fig:hac_z",
         )
     else:
-        st.image(str(C.OUTPUTS / "informe_hac_z.png"),
-                 caption="Significancia de los coeficientes HAC.",
-                 width="stretch")
+        ui.imagen(C.ASSETS / "diagrams" / "informe_hac_z.png",
+                  "Significancia de los coeficientes HAC.")
 
     coef = T.tabla_ols(R)
     coef_vista = pd.DataFrame({

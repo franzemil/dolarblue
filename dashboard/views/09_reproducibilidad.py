@@ -17,9 +17,8 @@ ui.lectura(
 )
 
 ui.seccion("Pipeline")
-st.image(str(C.OUTPUTS / "informe_flujo_datos.png"),
-         caption="Fuentes → recolectores → procesadores → CSV de análisis.",
-         width="stretch")
+ui.imagen(C.ASSETS / "diagrams" / "informe_flujo_datos.png",
+          "Fuentes → recolectores → procesadores → CSV de análisis.")
 st.code(
     """data/raw/*.json ──► processors ──► data/processed/*.csv
                                      ├── market_hourly.csv
