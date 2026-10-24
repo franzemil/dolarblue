@@ -33,7 +33,7 @@ def _callback() -> None:
     """Pipeline de datos del proyecto (fuentes: dolarblue API + Gaceta)."""
 
 DATA_DIR = Path(__file__).parent / "data"
-ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+ENV_FILE = Path(__file__).resolve().parent / ".env"
 DEFAULT_MAX_AGE_HOURS = 24.0
 
 

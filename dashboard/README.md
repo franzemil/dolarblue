@@ -80,4 +80,3 @@ dashboard/
   captions de tablas y figuras (`tab:arima`, `fig:roc`).
 - El gráfico de significancia HAC usa escala lineal. El coeficiente
   `brecha_lag1h` (|z| ≈ 155) se anota fuera del eje para poder leer el resto.
-- El detalle de diseño y las decisiones están en `PLAN.md`.
